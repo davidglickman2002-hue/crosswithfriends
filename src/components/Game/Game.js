@@ -424,10 +424,12 @@ export default class Game extends Component {
     const rows = grid.length;
     let width;
     if (this.props.mobile) {
-      // In mobile view (100dvh flex column), top half contains the grid and active clue.
-      const availableHeight = Math.max(200, (window.innerHeight || 600) * 0.48 - 48);
+      // Reserved mobile chrome: toolbar (~38px) + clue bar (~44px) + keyboard (~180px) + buffer (~18px)
+      const MOBILE_CHROME_HEIGHT = 280;
+      const availableHeight = Math.max(160, (window.innerHeight || 600) - MOBILE_CHROME_HEIGHT);
       const heightConstrainedWidth = (availableHeight * cols) / rows;
-      width = Math.min(heightConstrainedWidth, screenWidth - 16);
+      // Allow the grid to take nearly full screen width with a minimal 4px gutter on each side
+      width = Math.min(heightConstrainedWidth, screenWidth - 8);
     } else {
       // Keep the grid inside the viewport so high browser zooms don't overflow.
       // Reserved chrome: nav (~41px) + toolbar (~30px) + clue bar (~44px) + padding (~24px) + margin (~46px).

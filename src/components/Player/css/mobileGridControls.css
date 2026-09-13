@@ -5,18 +5,29 @@
   outline: none;
   position: relative;
   height: 100%;
+  width: 100%;
   overflow: hidden;
   background-color: #fff;
+  justify-content: space-between;
 }
 
-.mobile-grid-controls--top-half {
+.mobile-grid-controls--grid-area {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   overflow: hidden;
-  padding-bottom: 216px; /* Space for the fixed on-screen keyboard at bottom */
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.mobile-grid-controls--bottom-area {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background-color: #fff;
 }
 
 .mobile-grid-controls--grid-content {
@@ -26,6 +37,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
 }
 
 .mobile-grid-controls--zoom-container {
@@ -33,6 +45,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  width: 100%;
+  height: 100%;
 }
 
 .mobile-grid-controls--zoom-content {

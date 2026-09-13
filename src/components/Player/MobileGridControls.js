@@ -112,7 +112,7 @@ export default class MobileGridControls extends GridControls {
     const maxX = PADDING;
     translateX = Math.min(Math.max(translateX, minX), maxX);
 
-    const usableHeight = visualViewport.height - rect.y;
+    const usableHeight = rect.height > 0 ? rect.height : Math.max(100, visualViewport.height - rect.y);
     const gridHeight = this.grid.rows * size * scale;
     const minY = Math.min(0, usableHeight - gridHeight - PADDING);
     const maxY = PADDING;
@@ -168,15 +168,14 @@ export default class MobileGridControls extends GridControls {
   }
 
   centerGridX() {
-    let {scale, translateX, translateY} = this.state.transform;
+    let {scale, translateX} = this.state.transform;
     const usableWidth = visualViewport.width;
     // this.props.size can't be trusted; Player.updateSize will soon recalculate
     // it using this formula
-    const size = Math.floor(usableWidth / this.grid.cols);
+    const size = this.props.size || Math.floor(usableWidth / this.grid.cols);
     const gridWidth = this.grid.cols * size;
-    translateX = (usableWidth - gridWidth) / 2;
-    translateY = translateX;
-    this.setState({transform: {scale, translateX, translateY}});
+    translateX = Math.max(0, (usableWidth - gridWidth) / 2);
+    this.setState({transform: {scale, translateX, translateY: 0}});
   }
 
   handleClueBarTouchEnd = (e) => {
@@ -577,17 +576,17 @@ export default class MobileGridControls extends GridControls {
         tabIndex={0}
         onKeyDown={this.handleKeyDown}
       >
-        <div className="mobile-grid-controls--top-half">
-          {this.renderGridContent()}
+        <div className="mobile-grid-controls--grid-area">{this.renderGridContent()}</div>
+        <div className="mobile-grid-controls--bottom-area">
           {this.renderClueBar()}
+          <Keyboard
+            direction={this.props.direction}
+            disabled={this.props.frozen}
+            onKeyPress={this.handleVirtualKeyPress}
+            onBackspace={this.handleVirtualBackspace}
+            onDirectionToggle={this.handleVirtualDirectionToggle}
+          />
         </div>
-        <Keyboard
-          direction={this.props.direction}
-          disabled={this.props.frozen}
-          onKeyPress={this.handleVirtualKeyPress}
-          onBackspace={this.handleVirtualBackspace}
-          onDirectionToggle={this.handleVirtualDirectionToggle}
-        />
         {this.renderMobileInputs()}
         {this.props.enableDebug && (this.state.dbgstr || 'No message')}
         <RunOnce effect={this.boundCenterGridX} />
