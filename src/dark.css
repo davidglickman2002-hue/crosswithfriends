@@ -35,12 +35,47 @@
   color: var(--dark-primary-text);
 }
 
+.dark .room--mobile,
+.dark .game--mobile-layout,
+.dark .mobile-grid-controls {
+  background-color: var(--dark-background);
+}
+
+.dark .mobile-grid-controls--bottom-area {
+  background-color: #1f2937;
+}
+
+.dark .mobile-grid-controls--clue-bar-container {
+  background-color: var(--dark-blue-2);
+  border-top-color: #374151;
+  border-bottom-color: #374151;
+}
+
 .dark .mobile-grid-controls--clue-bar {
   background-color: var(--dark-blue-2);
+  color: var(--dark-primary-text);
+}
+
+.dark .mobile-grid-controls--clue-bar--number {
+  color: #fff;
+}
+
+.dark .mobile-grid-controls--clue-bar--text {
+  color: var(--dark-primary-text);
 }
 
 .dark .mobile-grid-controls--intra-clue {
   background-color: var(--dark-blue-2);
+  color: var(--dark-primary-text);
+}
+
+.dark .mobile-grid-controls--intra-clue:hover {
+  background-color: rgb(255 255 255 / 10%);
+}
+
+.dark .player--mobile--clue-bar {
+  background-color: var(--dark-blue-2);
+  color: var(--dark-primary-text);
 }
 
 .dark .player--main--left--grid {
@@ -60,7 +95,9 @@
   background-color: var(--dark-background);
 }
 
-.dark .cell.highlighted {
+.dark .cell.highlighted,
+.dark .player--mobile--wrapper .cell.highlighted,
+.dark .mobile .cell.highlighted {
   background-color: var(--dark-blue-2) !important;
 }
 
@@ -140,6 +177,33 @@
 
 .dark .toolbar--mobile {
   background-color: var(--dark-blue-1);
+  border-bottom-color: #374151;
+  color: var(--dark-primary-text);
+}
+
+.dark .toolbar--mobile button {
+  color: var(--dark-primary-text);
+}
+
+.dark .toolbar--mobile button:hover {
+  background-color: rgb(255 255 255 / 10%);
+}
+
+.dark .toolbar--mobile .clock {
+  color: var(--dark-primary-text);
+}
+
+.dark .toolbar--mobile-icon {
+  color: var(--dark-primary-text);
+}
+
+.dark .toolbar--mobile--back {
+  color: var(--dark-primary-text);
+}
+
+.dark .toolbar--mobile--back:hover,
+.dark .toolbar--mobile--back:active {
+  color: #fff;
 }
 
 .dark .chat {
@@ -157,8 +221,41 @@
   border-top: none !important;
 }
 
+.dark .cell.selected,
+.dark .player--mobile--wrapper .cell.selected,
+.dark .mobile .cell.selected {
+  background-color: #ffda00 !important;
+  color: #000 !important;
+}
+
 .dark .cell.selected .cell--wrapper {
   background-color: rgb(0 0 0 / 10%);
+}
+
+.dark .cell.selected .cell--number,
+.dark .player--mobile--wrapper .cell.selected .cell--number,
+.dark .mobile .cell.selected .cell--number,
+.dark .cell.selected .cell--value,
+.dark .player--mobile--wrapper .cell.selected .cell--value,
+.dark .mobile .cell.selected .cell--value {
+  color: #000 !important;
+}
+
+.dark .cell.selected.good .cell--value {
+  color: #0056b3 !important;
+}
+
+.dark .cell.selected.bad .cell--value {
+  color: #c62828 !important;
+}
+
+.dark .cell.selected.revealed .cell--value {
+  color: #2e7d32 !important;
+}
+
+.dark .cell.selected.pencil .cell--value {
+  color: #333 !important;
+  text-shadow: none;
 }
 
 .dark .cell.good .cell--value {

@@ -67,4 +67,36 @@ describe('dark mode body class syncing', () => {
 
     document.body.removeChild(portalDiv);
   });
+
+  it('matches mobile game layout and clue bar elements under .dark', () => {
+    document.body.classList.add('dark');
+    const container = document.createElement('div');
+    container.innerHTML = `
+      <div class="room room--mobile">
+        <div class="toolbar--mobile">
+          <button class="toolbar--btn">Check</button>
+          <span class="clock">00:00</span>
+        </div>
+        <div class="mobile-grid-controls">
+          <div class="mobile-grid-controls--clue-bar">
+            <span class="mobile-grid-controls--clue-bar--number">1A</span>
+            <span class="mobile-grid-controls--clue-bar--text">Clue</span>
+          </div>
+          <div class="player--mobile--wrapper">
+            <div class="cell selected"><div class="cell--number">1</div><div class="cell--value">A</div></div>
+            <div class="cell highlighted"></div>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(container);
+
+    expect(document.querySelectorAll('.dark .toolbar--mobile').length).toBe(1);
+    expect(document.querySelectorAll('.dark .mobile-grid-controls--clue-bar--number').length).toBe(1);
+    expect(document.querySelectorAll('.dark .mobile-grid-controls--clue-bar--text').length).toBe(1);
+    expect(document.querySelectorAll('.dark .cell.selected').length).toBe(1);
+    expect(document.querySelectorAll('.dark .player--mobile--wrapper .cell.highlighted').length).toBe(1);
+
+    document.body.removeChild(container);
+  });
 });
