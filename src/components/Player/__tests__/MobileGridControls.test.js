@@ -138,3 +138,57 @@ describe('MobileGridControls — validLetter regression', () => {
     vi.useRealTimers();
   });
 });
+
+describe('MobileGridControls — virtual keyboard inputs', () => {
+  it('types a single letter without rebus and advances cursor to next empty cell', () => {
+    const {instance, props} = makeMobileInstance({
+      selected: {r: 0, c: 0},
+      direction: 'across',
+      grid: makeGrid({
+        '0,0': {value: ''},
+        '0,1': {value: ''},
+      }),
+    });
+    vi.useFakeTimers();
+    instance.handleVirtualKeyPress('A');
+    vi.runAllTimers();
+    // Only 'A' was written, not concatenated
+    expect(props.updateGrid).toHaveBeenCalledWith(0, 0, 'A');
+    // Cursor advanced to (0, 1)
+    expect(props.onSetSelected).toHaveBeenCalledWith({r: 0, c: 1});
+    vi.useRealTimers();
+  });
+
+  it('handles backspace via virtual keyboard', () => {
+    const {instance, props} = makeMobileInstance({
+      selected: {r: 0, c: 0},
+      grid: makeGrid({'0,0': {value: 'A'}}),
+    });
+    vi.useFakeTimers();
+    instance.handleVirtualKeyPress('BACKSPACE');
+    vi.runAllTimers();
+    expect(props.updateGrid).toHaveBeenCalledWith(0, 0, '');
+    vi.useRealTimers();
+  });
+
+  it('toggles direction via virtual keyboard', () => {
+    const {instance, props} = makeMobileInstance({
+      selected: {r: 0, c: 0},
+      direction: 'across',
+    });
+    instance.handleVirtualKeyPress('TOGGLE_DIRECTION');
+    expect(props.onSetDirection).toHaveBeenCalledWith('down');
+  });
+
+  it('does not type when puzzle is frozen', () => {
+    const {instance, props} = makeMobileInstance({
+      frozen: true,
+      selected: {r: 0, c: 0},
+    });
+    vi.useFakeTimers();
+    instance.handleVirtualKeyPress('A');
+    vi.runAllTimers();
+    expect(props.updateGrid).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+});

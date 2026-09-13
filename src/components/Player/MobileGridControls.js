@@ -458,9 +458,9 @@ export default class MobileGridControls extends GridControls {
 
   handleVirtualKeyPress = (key) => {
     if (key === 'BACKSPACE') {
-      this.backspace();
+      this.handleVirtualBackspace();
     } else if (key === 'TOGGLE_DIRECTION') {
-      this.flipDirection();
+      this.handleVirtualDirectionToggle();
     } else if (key === 'ArrowLeft') {
       this.handleAction('left');
     } else if (key === 'ArrowRight') {
@@ -469,14 +469,15 @@ export default class MobileGridControls extends GridControls {
       this.handleAction('up');
     } else if (key === 'ArrowDown') {
       this.handleAction('down');
-    } else if (validLetter(key)) {
-      this.typeLetter(key.toUpperCase(), true, {
+    } else if (!this.props.frozen && validLetter(key)) {
+      this.typeLetter(key.toUpperCase(), false, {
         nextClueIfFilled: this.props.autoAdvanceCursor,
       });
     }
   };
 
   handleVirtualBackspace = () => {
+    if (this.props.frozen) return;
     this.backspace();
   };
 
