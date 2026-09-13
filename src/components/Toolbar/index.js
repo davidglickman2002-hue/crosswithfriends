@@ -1,5 +1,6 @@
 import './css/index.css';
 import {Component} from 'react';
+import {Link} from 'react-router';
 import {
   MdBorderAll,
   MdChatBubble,
@@ -7,6 +8,7 @@ import {
   MdList,
   MdSlowMotionVideo,
   MdErrorOutline,
+  MdArrowBack,
 } from 'react-icons/md';
 import {AiOutlineMenuFold, AiOutlineMenuUnfold} from 'react-icons/ai';
 import {RiPaintFill, RiPaintLine} from 'react-icons/ri';
@@ -240,6 +242,9 @@ export default class Toolbar extends Component {
           'Text: Smaller': () => onFontScaleChange(-0.1),
           ...(isScaled && {[resetLabel]: () => onFontScaleChange(1.0 - fontScale)}),
           'New game link': () => window.open(`/beta/play/${this.props.pid}?new=1`, '_blank'),
+          Home: () => {
+            window.location.href = '/';
+          },
         }}
       />
     );
@@ -643,6 +648,9 @@ export default class Toolbar extends Component {
       return (
         <>
           <div className="flex flex--align-center toolbar--mobile">
+            <Link to="/" className="toolbar--mobile--back" aria-label="Home" title="Return to home">
+              <MdArrowBack className="toolbar--mobile-icon" />
+            </Link>
             <div className="flex flex--grow flex--align-center toolbar--mobile--top">
               {!expandMenu ? (
                 <>

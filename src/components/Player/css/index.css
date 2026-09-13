@@ -141,7 +141,7 @@
   background-color: var(--main-blue-3);
   padding: 10px 20px;
   display: flex;
-  font-size: 15px;
+  font-size: 18px;
   flex: 1;
   min-height: 20px;
   align-items: center;
@@ -150,6 +150,7 @@
 .player--mobile--clue-bar--number {
   font-weight: bold;
   display: inline-block;
+  font-size: 18px;
 }
 
 .player--mobile--clue-bar--text {
@@ -157,6 +158,7 @@
   display: inline-block;
   overflow-y: auto;
   max-height: 100%;
+  font-size: 18px;
 }
 
 @media print {

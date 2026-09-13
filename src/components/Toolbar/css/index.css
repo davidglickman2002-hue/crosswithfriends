@@ -148,6 +148,25 @@ code {
   font-weight: 600;
 }
 
+.toolbar--mobile--back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #000;
+  text-decoration: none;
+  padding: 4px 6px 4px 0;
+  margin-right: 4px;
+}
+
+.toolbar--mobile--back:hover,
+.toolbar--mobile--back:active {
+  color: #374151;
+}
+
+.dark .toolbar--mobile--back {
+  color: #fff;
+}
+
 .toolbar--mobile button {
   background-color: transparent;
   border: none;

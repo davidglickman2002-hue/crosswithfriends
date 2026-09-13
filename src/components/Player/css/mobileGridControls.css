@@ -79,9 +79,9 @@
   background-color: #f9fafb;
   color: #000;
   display: flex;
-  font-size: 15px;
+  font-size: 18px;
   flex: 1;
-  min-height: 48px;
+  min-height: 52px;
   position: relative;
   overflow: hidden;
   cursor: pointer;
@@ -89,15 +89,19 @@
 
 .mobile-grid-controls--clue-bar--number {
   font-weight: 700;
-  color: #000;
+  font-size: 18px;
+  color: #111827;
   display: inline-block;
+  flex-shrink: 0;
 }
 
 .mobile-grid-controls--clue-bar--text {
-  margin-left: 16px;
+  margin-left: 12px;
   display: inline-block;
   overflow-y: auto;
   color: #111827;
+  font-size: 18px;
+  line-height: 1.25;
   font-weight: 500;
 
   /* Definite px cap (matches the bar's min-height) instead of `max-height:
@@ -106,7 +110,7 @@
      Firefox on Android stopped treating as definite, collapsing this scroll
      box to one line. A px value resolves identically in every browser: up to
      two lines show, longer clues scroll. */
-  max-height: 48px;
+  max-height: 52px;
 }
 
 .mobile-grid-controls--clue-bar--text > span {
