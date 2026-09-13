@@ -61,7 +61,7 @@ export const getSocket = () => {
       // happens transparently and subsequent traffic is full-duplex over
       // WS as before. Worth it to make multiplayer reachable for the
       // tail of users behind WS-hostile intermediaries.
-      const socketOptions: Record<string, any> = {transports: ['polling', 'websocket']};
+      const socketOptions: Record<string, any> = {transports: ['websocket']};
       // dfacId always travels — it's the guest identity. The server uses
       // both this and the JWT-derived userId for ban/lock checks.
       const auth = buildAuth();
