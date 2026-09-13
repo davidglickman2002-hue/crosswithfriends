@@ -151,6 +151,16 @@ div:focus .cell.referenced {
   /* background-color: #98ee99; */
 }
 
+.player--mobile--wrapper .cell.selected,
+.mobile .cell.selected {
+  background-color: #ffda00 !important;
+}
+
+.player--mobile--wrapper .cell.highlighted,
+.mobile .cell.highlighted {
+  background-color: #a7d8ff !important;
+}
+
 .cell.pencil .cell--value {
   color: var(--pencil-color);
 }

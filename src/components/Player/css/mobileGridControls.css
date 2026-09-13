@@ -4,55 +4,87 @@
   flex-direction: column;
   outline: none;
   position: relative;
+  height: 100%;
+  overflow: hidden;
+  background-color: #fff;
+}
+
+.mobile-grid-controls--top-half {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  padding-bottom: 216px; /* Space for the fixed on-screen keyboard at bottom */
 }
 
 .mobile-grid-controls--grid-content {
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .mobile-grid-controls--zoom-container {
   overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .mobile-grid-controls--zoom-content {
   transform-origin: top left;
 }
 
+.mobile-grid-controls--clue-bar-container {
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+}
+
 .mobile-grid-controls--intra-clue {
-  background-color: var(--main-blue-3);
+  background-color: #f9fafb;
+  color: #111827;
   width: 24px;
   height: 24px;
   padding: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+}
+
+.mobile-grid-controls--intra-clue:hover {
+  background-color: #e5e7eb;
 }
 
 .mobile-grid-controls--clue-bar {
-  background-color: var(--main-blue-3);
+  background-color: #f9fafb;
+  color: #000;
   display: flex;
   font-size: 15px;
   flex: 1;
-
-  /* Room for ~2 lines of clue text. Firefox on Android (153+) stopped
-     treating this bar's flex-stretched height as "definite", which collapsed
-     the descendants' percentage heights below and clipped 2-line clues to a
-     single scrollable line (#firefox-android clue-bar report). A concrete
-     min-height keeps the bar tall enough regardless. */
   min-height: 48px;
   position: relative;
   overflow: hidden;
+  cursor: pointer;
 }
 
 .mobile-grid-controls--clue-bar--number {
-  font-weight: bold;
+  font-weight: 700;
+  color: #000;
   display: inline-block;
 }
 
 .mobile-grid-controls--clue-bar--text {
-  margin-left: 20px;
+  margin-left: 16px;
   display: inline-block;
   overflow-y: auto;
+  color: #111827;
+  font-weight: 500;
 
   /* Definite px cap (matches the bar's min-height) instead of `max-height:
      100%`. A percentage max-height only resolves against an ancestor with a

@@ -1,3 +1,4 @@
+/* eslint-disable class-methods-use-this, react/jsx-no-bind */
 import './css/mobileGridControls.css';
 
 import React, {useEffect} from 'react';
@@ -6,6 +7,7 @@ import _ from 'lodash';
 import Clue from './ClueText';
 import GridControls, {validLetter} from './GridControls';
 import GridObject from '../../lib/wrappers/GridWrapper';
+import Keyboard from './Keyboard';
 
 const RunOnce = ({effect}) => {
   useEffect(() => {
@@ -17,26 +19,6 @@ const RunOnce = ({effect}) => {
 
 function getClueAbbreviation({clueNumber = '', direction = ''} = {}) {
   return `${clueNumber}${direction.substring(0, 1).toUpperCase()}`;
-}
-
-// Firefox Android routes hardware volume keys through the focused element
-// instead of the OS media bus, so while our hidden IME-capture textarea is
-// focused the device volume rocker stops working (#479). Blur on detection
-// so the next press reaches the OS. Includes both the modern AudioVolume*
-// values and the deprecated Volume* values still used by some older Android
-// browsers / WebViews.
-const VOLUME_KEYS = new Set([
-  'AudioVolumeUp',
-  'AudioVolumeDown',
-  'AudioVolumeMute',
-  'VolumeUp',
-  'VolumeDown',
-  'VolumeMute',
-]);
-function handleVolumeKeyBlur(ev) {
-  if (VOLUME_KEYS.has(ev.key)) {
-    ev.target.blur();
-  }
 }
 
 export default class MobileGridControls extends GridControls {
@@ -207,7 +189,6 @@ export default class MobileGridControls extends GridControls {
     this.touchingClueBarMaxTravelDist = 0;
     if (touchTravelDist <= countAsTapBuffer && maxTravelDist <= countAsTapBuffer) {
       this.flipDirection();
-      this.keepFocus();
     }
   };
 
@@ -283,7 +264,6 @@ export default class MobileGridControls extends GridControls {
           this.props.onSetSelected({r, c});
         }
       }
-      this.focusKeyboard();
     }
     e.preventDefault();
     this.handleTouchMove(e);
@@ -292,13 +272,11 @@ export default class MobileGridControls extends GridControls {
   handleRightArrowTouchEnd = (e) => {
     e.preventDefault();
     this.handleAction('tab');
-    this.keepFocus();
   };
 
   handleLeftArrowTouchEnd = (e) => {
     e.preventDefault();
     this.handleAction('tab', true);
-    this.keepFocus();
   };
 
   gridContentRef = (e) => {
@@ -422,7 +400,10 @@ export default class MobileGridControls extends GridControls {
     return (
       <div className="flex mobile-grid-controls--clue-bar-container">
         <div ref={this.leftArrowRef} style={{display: 'flex'}}>
-          <MdKeyboardArrowLeft className="mobile-grid-controls--intra-clue left" onClick={this.keepFocus} />
+          <MdKeyboardArrowLeft
+            className="mobile-grid-controls--intra-clue left"
+            onClick={() => this.handleAction('tab', true)}
+          />
         </div>
         <div
           role="button"
@@ -434,8 +415,13 @@ export default class MobileGridControls extends GridControls {
           }}
           className="mobile-grid-controls--clue-bar"
           ref={this.clueBarRef}
-          onClick={this.keepFocus}
-          onKeyDown={this.keepFocus}
+          onClick={this.flipDirection}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              this.flipDirection();
+            }
+          }}
         >
           <div className="mobile-grid-controls--clue-bar--clues--container">
             <div className="mobile-grid-controls--clue-bar--main">
@@ -449,27 +435,56 @@ export default class MobileGridControls extends GridControls {
           </div>
         </div>
         <div ref={this.rightArrowRef} style={{display: 'flex'}}>
-          <MdKeyboardArrowRight className="mobile-grid-controls--intra-clue left" onClick={this.keepFocus} />
+          <MdKeyboardArrowRight
+            className="mobile-grid-controls--intra-clue left"
+            onClick={() => this.handleAction('tab')}
+          />
         </div>
       </div>
     );
   }
 
+  focus() {
+    // Disabled on mobile to prevent native OS keyboard activation
+  }
+
   focusKeyboard() {
-    const cursorPosition = this.inputRef.current.value.length;
-    this.inputRef.current.selectionStart = cursorPosition;
-    this.inputRef.current.selectionEnd = cursorPosition;
-    this.inputRef.current.focus();
+    // Disabled on mobile to prevent native OS keyboard activation
   }
 
   keepFocus = () => {
-    if (!this.wasUnfocused || this.wasUnfocused >= Date.now() - 500) {
-      this.focusKeyboard();
+    // Disabled on mobile to prevent native OS keyboard activation
+  };
+
+  handleVirtualKeyPress = (key) => {
+    if (key === 'BACKSPACE') {
+      this.backspace();
+    } else if (key === 'TOGGLE_DIRECTION') {
+      this.flipDirection();
+    } else if (key === 'ArrowLeft') {
+      this.handleAction('left');
+    } else if (key === 'ArrowRight') {
+      this.handleAction('right');
+    } else if (key === 'ArrowUp') {
+      this.handleAction('up');
+    } else if (key === 'ArrowDown') {
+      this.handleAction('down');
+    } else if (validLetter(key)) {
+      this.typeLetter(key.toUpperCase(), true, {
+        nextClueIfFilled: this.props.autoAdvanceCursor,
+      });
     }
   };
 
+  handleVirtualBackspace = () => {
+    this.backspace();
+  };
+
+  handleVirtualDirectionToggle = () => {
+    this.flipDirection();
+  };
+
   handleInputFocus = (e) => {
-    this.focusKeyboard();
     this.setState({dbgstr: `INPUT FOCUS ${e.target.name}`});
     if (e.target.name === '1') {
       this.selectNextClue(true);
@@ -548,159 +563,30 @@ export default class MobileGridControls extends GridControls {
   };
 
   renderMobileInputs() {
-    // This resets the input to contain just "$" on every render.
-    const inputValue = '$';
-    const inputStyle = {
-      opacity: 0,
-      width: 0,
-      height: 0,
-      pointerEvents: 'none',
-      touchEvents: 'none',
-      position: 'absolute',
-    };
-    // The attributes below suppress iOS / mobile keyboard chrome that eats
-    // vertical space:
-    // - autoComplete="off" disables browser autofill suggestions (the
-    //   prior value "none" is invalid and was treated like the default).
-    // - autoCorrect/spellCheck off prevent the predictive-text accessory bar.
-    // - inputMode="text" gives an explicit hint so iOS doesn't fall back to
-    //   email-style behavior (which surfaced the credit-card / contacts /
-    //   location AutoFill bar above the keyboard).
-    // - data-*-ignore + data-form-type opt out of 1Password / LastPass /
-    //   Bitwarden popups (mirrors the desktop GridControls fix).
-    // Previously these textareas had type="email", which is invalid on a
-    // <textarea> but iOS WebKit picked it up and rendered the autofill bar.
-
-    const USE_TEXT_AREA = true;
-    if (USE_TEXT_AREA) {
-      return (
-        <>
-          <textarea
-            name="1"
-            value={inputValue}
-            style={inputStyle}
-            autoComplete="off"
-            autoCapitalize="none"
-            autoCorrect="off"
-            spellCheck={false}
-            inputMode="text"
-            data-1p-ignore
-            data-lpignore="true"
-            data-bw-ignore="true"
-            data-form-type="other"
-            onBlur={this.handleInputBlur}
-            onFocus={this.handleInputFocus}
-            onChange={this.handleInputChange}
-            onKeyDown={handleVolumeKeyBlur}
-          />
-          <textarea
-            name="2"
-            ref={this.inputRef}
-            value={inputValue}
-            style={inputStyle}
-            autoComplete="off"
-            autoCapitalize="none"
-            autoCorrect="off"
-            spellCheck={false}
-            inputMode="text"
-            data-1p-ignore
-            data-lpignore="true"
-            data-bw-ignore="true"
-            data-form-type="other"
-            onBlur={this.handleInputBlur}
-            onFocus={this.handleInputFocus}
-            onChange={this.handleInputChange}
-            onKeyDown={handleVolumeKeyBlur}
-            onKeyUp={this.handleKeyUp}
-          />
-          <textarea
-            name="3"
-            value={inputValue}
-            style={inputStyle}
-            autoComplete="off"
-            autoCapitalize="none"
-            autoCorrect="off"
-            spellCheck={false}
-            inputMode="text"
-            data-1p-ignore
-            data-lpignore="true"
-            data-bw-ignore="true"
-            data-form-type="other"
-            onBlur={this.handleInputBlur}
-            onFocus={this.handleInputFocus}
-            onChange={this.handleInputChange}
-            onKeyDown={handleVolumeKeyBlur}
-          />
-        </>
-      );
-    }
-    return (
-      <>
-        <input
-          name="1"
-          value={inputValue}
-          type="text"
-          style={inputStyle}
-          autoComplete="off"
-          autoCapitalize="none"
-          autoCorrect="off"
-          spellCheck={false}
-          inputMode="text"
-          data-1p-ignore
-          data-lpignore="true"
-          data-bw-ignore="true"
-          data-form-type="other"
-          onBlur={this.handleInputBlur}
-          onFocus={this.handleInputFocus}
-          onChange={this.handleInputChange}
-        />
-        <input
-          name="2"
-          ref={this.inputRef}
-          value={inputValue}
-          type="text"
-          style={inputStyle}
-          autoComplete="off"
-          autoCapitalize="none"
-          autoCorrect="off"
-          spellCheck={false}
-          inputMode="text"
-          data-1p-ignore
-          data-lpignore="true"
-          data-bw-ignore="true"
-          data-form-type="other"
-          onBlur={this.handleInputBlur}
-          onFocus={this.handleInputFocus}
-          onChange={this.handleInputChange}
-          onKeyUp={this.handleKeyUp}
-        />
-        <input
-          name="3"
-          value={inputValue}
-          type="text"
-          style={inputStyle}
-          autoComplete="off"
-          autoCapitalize="none"
-          autoCorrect="off"
-          spellCheck={false}
-          inputMode="text"
-          data-1p-ignore
-          data-lpignore="true"
-          data-bw-ignore="true"
-          data-form-type="other"
-          onBlur={this.handleInputBlur}
-          onFocus={this.handleInputFocus}
-          onChange={this.handleInputChange}
-        />
-      </>
-    );
+    // Native inputs are removed so mobile browsers never trigger the OS-level keyboard
+    return null;
   }
 
   render() {
     return (
-      <div ref={this.gridControlsRef} className="mobile-grid-controls">
-        {this.renderClueBar()}
-        {this.renderGridContent()}
+      <div
+        ref={this.gridControlsRef}
+        role="grid"
+        className="mobile-grid-controls"
+        tabIndex={0}
+        onKeyDown={this.handleKeyDown}
+      >
+        <div className="mobile-grid-controls--top-half">
+          {this.renderGridContent()}
+          {this.renderClueBar()}
+        </div>
+        <Keyboard
+          direction={this.props.direction}
+          disabled={this.props.frozen}
+          onKeyPress={this.handleVirtualKeyPress}
+          onBackspace={this.handleVirtualBackspace}
+          onDirectionToggle={this.handleVirtualDirectionToggle}
+        />
         {this.renderMobileInputs()}
         {this.props.enableDebug && (this.state.dbgstr || 'No message')}
         <RunOnce effect={this.boundCenterGridX} />

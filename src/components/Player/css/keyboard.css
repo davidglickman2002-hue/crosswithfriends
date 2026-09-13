@@ -1,0 +1,128 @@
+.onscreen-keyboard {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  background-color: #e5e7eb;
+  padding: 6px 4px;
+  padding-bottom: max(8px, env(safe-area-inset-bottom, 8px));
+  box-sizing: border-box;
+  user-select: none;
+  touch-action: manipulation;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  border-top: 1px solid #d1d5db;
+}
+
+.onscreen-keyboard.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.onscreen-keyboard--row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  touch-action: manipulation;
+}
+
+.onscreen-keyboard--spacer-half {
+  flex: 0.5;
+  pointer-events: none;
+}
+
+.onscreen-keyboard--key {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  margin: 3px 2px;
+  padding: 0;
+  background-color: #fff;
+  color: #000;
+  border: none;
+  border-radius: 5px;
+  font-family: var(--app-font-family, sans-serif);
+  font-size: 19px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 20%);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color 0.08s ease,
+    transform 0.05s ease;
+}
+
+.onscreen-keyboard--key:active {
+  background-color: #d1d5db;
+  transform: translateY(1px);
+  box-shadow: 0 0 1px rgb(0 0 0 / 20%);
+}
+
+.onscreen-keyboard--key-action {
+  flex: 1.4;
+  background-color: #d1d5db;
+  color: #1f2937;
+  font-size: 16px;
+}
+
+.onscreen-keyboard--key-action:active {
+  background-color: #9ca3af;
+}
+
+.onscreen-keyboard--key-direction {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.onscreen-keyboard--direction-icon {
+  display: flex;
+  align-items: center;
+  font-size: 18px;
+}
+
+.onscreen-keyboard--direction-toggle {
+  display: flex;
+  align-items: center;
+  font-size: 15px;
+  opacity: 0.75;
+}
+
+.onscreen-keyboard--backspace-icon {
+  font-size: 22px;
+}
+
+/* Dark mode overrides if dark mode is toggled */
+.dark .onscreen-keyboard {
+  background-color: #1f2937;
+  border-top-color: #374151;
+}
+
+.dark .onscreen-keyboard--key {
+  background-color: #374151;
+  color: #f9fafb;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 50%);
+}
+
+.dark .onscreen-keyboard--key:active {
+  background-color: #4b5563;
+}
+
+.dark .onscreen-keyboard--key-action {
+  background-color: #4b5563;
+  color: #f9fafb;
+}
+
+.dark .onscreen-keyboard--key-action:active {
+  background-color: #6b7280;
+}

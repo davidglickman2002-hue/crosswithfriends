@@ -499,7 +499,6 @@ export default class Player extends Component {
                 </div>
               </div>
             </MobileListViewControls>
-            {this.renderColorAttributionCounts()}
           </div>
         );
       }
@@ -532,7 +531,6 @@ export default class Player extends Component {
               </div>
             </div>
           </MobileGridControls>
-          {this.renderColorAttributionCounts()}
         </div>
       );
     }

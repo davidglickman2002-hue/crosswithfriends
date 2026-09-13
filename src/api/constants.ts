@@ -13,11 +13,12 @@ function getServerUrl() {
 }
 export const SERVER_URL = getServerUrl();
 
-// Socket.IO always connects directly to backend (WebSocket, token auth, no cookies)
+// Socket.IO connects directly in production, or via dev proxy / localhost in development
 // Self-hosted (Docker): use same-origin since backend serves everything
 function getSocketHost() {
   if (import.meta.env.VITE_USE_LOCAL_SERVER) return 'http://localhost:3021';
-  if (import.meta.env.VITE_SELF_HOSTED) return window.location.origin;
+  if (import.meta.env.VITE_SELF_HOSTED) return typeof window !== 'undefined' ? window.location.origin : '';
+  if (import.meta.env.DEV) return typeof window !== 'undefined' ? window.location.origin : '';
   return REMOTE_SERVER_URL;
 }
 export const SOCKET_HOST = getSocketHost();

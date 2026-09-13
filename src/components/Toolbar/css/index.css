@@ -53,7 +53,7 @@ code {
 }
 
 .toolbar--mobile .toolbar--progress {
-  color: rgb(255 255 255 / 70%);
+  color: #4b5563;
   font-size: 11px;
   margin-top: 0;
   margin-left: 8px;
@@ -133,16 +133,17 @@ code {
 }
 
 .toolbar--mobile {
-  height: 48px;
-  padding: 0 16px;
-  background-color: var(--main-blue);
+  height: 38px;
+  padding: 0 12px;
+  background-color: #fff;
+  border-bottom: 1px solid #e5e7eb;
   justify-content: space-between;
-  font-size: 14pt;
-  color: white;
+  font-size: 13pt;
+  color: #000;
 }
 
 .toolbar--mobile a:first-child {
-  color: white;
+  color: #000;
   text-decoration: none;
   font-weight: 600;
 }
@@ -150,14 +151,14 @@ code {
 .toolbar--mobile button {
   background-color: transparent;
   border: none;
-  padding: 16px;
-  color: white;
-  font-size: 14px;
-  height: 48px;
+  padding: 8px 10px;
+  color: #000;
+  font-size: 13px;
+  height: 38px;
 }
 
 .toolbar--mobile-icon {
-  font-size: 18pt;
+  font-size: 16pt;
 }
 
 .toolbar--mobile--top {
@@ -168,7 +169,8 @@ code {
 }
 
 .toolbar--mobile .clock {
-  color: white;
+  color: #000;
+  font-weight: 600;
 }
 
 .toolbar--save-replay {

@@ -382,29 +382,52 @@ export default class Game extends Component {
       clues[dirToHide] = _.assign([], clues[dirToHide]).map((val) => val && '-');
     }
     const screenWidth = window.innerWidth - 1; // this is important for mobile to fit on screen
-    const themeStyles = {
-      clueBarStyle: {
-        backgroundColor: toHex(themeColor),
-      },
-      gridStyle: {
-        cellStyle: {
-          selected: {
-            backgroundColor: myColor,
+    const themeStyles = this.props.mobile
+      ? {
+          clueBarStyle: {
+            backgroundColor: '#ffffff',
+            color: '#000000',
           },
-          highlighted: {
-            backgroundColor: toHex(darken(themeColor)),
+          gridStyle: {
+            cellStyle: {
+              selected: {
+                backgroundColor: '#ffda00', // Standard yellow highlight for active cell
+              },
+              highlighted: {
+                backgroundColor: '#a7d8ff', // Standard blue highlight for active word
+              },
+              frozen: {
+                backgroundColor: '#dcefff',
+              },
+            },
           },
-          frozen: {
-            backgroundColor: toHex(GREENISH),
+        }
+      : {
+          clueBarStyle: {
+            backgroundColor: toHex(themeColor),
           },
-        },
-      },
-    };
+          gridStyle: {
+            cellStyle: {
+              selected: {
+                backgroundColor: myColor,
+              },
+              highlighted: {
+                backgroundColor: toHex(darken(themeColor)),
+              },
+              frozen: {
+                backgroundColor: toHex(GREENISH),
+              },
+            },
+          },
+        };
     const cols = grid[0].length;
     const rows = grid.length;
     let width;
     if (this.props.mobile) {
-      width = Math.min((35 * 15 * cols) / rows, screenWidth - 20);
+      // In mobile view (100dvh flex column), top half contains the grid and active clue.
+      const availableHeight = Math.max(200, (window.innerHeight || 600) * 0.48 - 48);
+      const heightConstrainedWidth = (availableHeight * cols) / rows;
+      width = Math.min(heightConstrainedWidth, screenWidth - 16);
     } else {
       // Keep the grid inside the viewport so high browser zooms don't overflow.
       // Reserved chrome: nav (~41px) + toolbar (~30px) + clue bar (~44px) + padding (~24px) + margin (~46px).
@@ -559,10 +582,10 @@ export default class Game extends Component {
   render() {
     const padding = this.props.mobile ? 0 : 12;
     return (
-      <div className="flex--column flex--grow">
+      <div className={`flex--column flex--grow${this.props.mobile ? ' game--mobile-container' : ''}`}>
         {this.renderToolbar()}
         <div
-          className="flex flex--grow"
+          className={`flex flex--grow${this.props.mobile ? ' player--mobile-container' : ''}`}
           style={{
             padding,
           }}

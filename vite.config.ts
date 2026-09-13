@@ -70,6 +70,15 @@ export default defineConfig({
         changeOrigin: true,
         secure: true,
       },
+      '/socket.io': {
+        target: 'https://downforacross-com.onrender.com',
+        changeOrigin: true,
+        ws: true,
+        secure: true,
+        headers: {
+          origin: 'https://crosswithfriends.com',
+        },
+      },
     },
   },
   optimizeDeps: {
@@ -86,7 +95,7 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (!id.includes('node_modules')) return undefined;
-if (id.includes('/lodash/')) return 'vendor-lodash';
+          if (id.includes('/lodash/')) return 'vendor-lodash';
           if (
             id.includes('/react-dom/') ||
             id.includes('/react/') ||

@@ -11,7 +11,6 @@ import Nav from '../components/common/Nav';
 import {GameModel} from '../store';
 import HistoryWrapper from '../lib/wrappers/HistoryWrapper';
 import GameComponent from '../components/Game';
-import MobilePanel from '../components/common/MobilePanel';
 import Chat from '../components/Chat';
 import {isMobile} from '../lib/jsUtils';
 import {pickDistinctColor} from '../lib/colorAssignment';
@@ -614,13 +613,7 @@ class Game extends Component {
   }
 
   renderContent() {
-    const mobileContent = (
-      <>
-        <MobilePanel />
-        {this.showingGame && this.renderGame()}
-        {this.showingChat && this.renderChat()}
-      </>
-    );
+    const mobileContent = <div className="game--mobile-layout">{this.showingGame && this.renderGame()}</div>;
 
     const {chatHidden, focusMode} = this.state;
     const desktopContent = (
@@ -641,10 +634,12 @@ class Game extends Component {
   render() {
     return (
       <div
-        className="flex--column flex--grow room"
+        className={`flex--column flex--grow room${this.state.mobile ? ' room--mobile' : ''}`}
         style={{
           width: '100%',
-          height: '100%',
+          height: this.state.mobile ? '100dvh' : '100%',
+          maxHeight: this.state.mobile ? '100dvh' : undefined,
+          overflow: this.state.mobile ? 'hidden' : undefined,
         }}
       >
         <Helmet>

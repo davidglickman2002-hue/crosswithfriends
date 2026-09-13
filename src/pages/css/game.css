@@ -3,6 +3,39 @@
   flex-grow: 1;
 }
 
+.room--mobile {
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  position: fixed;
+  inset: 0;
+  background-color: #fff;
+}
+
+.game--mobile-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: 100dvh;
+  overflow: hidden;
+  background-color: #fff;
+}
+
+.game--mobile-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.player--mobile-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 @media screen {
   .game {
     overflow: auto;
