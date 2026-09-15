@@ -5,7 +5,7 @@ import GridWrapper from '../../lib/wrappers/GridWrapper';
 import RerenderBoundary from '../RerenderBoundary';
 import {hashGridRow} from './hashGridRow';
 import Cell from './Cell';
-import {GridDataWithColor, CellCoords, ClueCoords, CellStyles, Ping} from './types';
+import {GridDataWithColor, CellCoords, ClueCoords, CellStyles, Ping, OtherSelection} from './types';
 import {CellIndex, ColoredShade, Cursor, ShadeEntry, toCellIndex} from '../../shared/types';
 
 export interface GridProps {
@@ -138,6 +138,32 @@ export default class Grid extends React.PureComponent<GridProps> {
   render() {
     const {size, cellStyle, fontScale = 1} = this.props;
     const sizeClass = Grid.getSizeClass(size);
+
+    const otherSelectionsMap: Record<string, OtherSelection[]> = {};
+    const activeCursors = (this.props.cursors || []).filter((c) => c.active !== false);
+
+    for (const cursor of activeCursors) {
+      const dir = cursor.direction || (this.grid.getParent(cursor.r, cursor.c, 'across') ? 'across' : 'down');
+      const clueNum = this.grid.getParent(cursor.r, cursor.c, dir);
+      if (!clueNum) continue;
+
+      for (const [r, c] of this.grid.items()) {
+        if (this.grid.isWhite(r, c) && this.grid.getParent(r, c, dir) === clueNum) {
+          const key = `${r}_${c}`;
+          if (!otherSelectionsMap[key]) {
+            otherSelectionsMap[key] = [];
+          }
+          otherSelectionsMap[key].push({
+            id: cursor.id,
+            color: cursor.color || 'blue',
+            displayName: cursor.displayName || '',
+            direction: dir,
+            isActiveSquare: cursor.r === r && cursor.c === c,
+          });
+        }
+      }
+    }
+
     const data = this.props.grid.map((row, r) =>
       row.map((cell, c) => ({
         ...cell,
@@ -151,6 +177,7 @@ export default class Grid extends React.PureComponent<GridProps> {
         image: this.getImage(r, c),
         canFlipColor: !!this.props.canFlipColor?.(r, c),
         cursors: (this.props.cursors || []).filter((cursor) => cursor.r === r && cursor.c === c),
+        otherSelections: otherSelectionsMap[`${r}_${c}`] || [],
         pings: (this.props.pings || []).filter((ping) => ping.r === r && ping.c === c),
         highlighted: this.isHighlighted(r, c),
         myColor: this.props.myColor,

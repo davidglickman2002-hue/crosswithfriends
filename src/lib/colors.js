@@ -31,3 +31,63 @@ export const lightenHsl = (string) => {
   }
   return `hsla${string.substring(3, string.length - 1)},40%)`;
 };
+
+export const getTranslucentColor = (color, opacity = 0.2) => {
+  if (!color) return 'transparent';
+  if (color.startsWith('hsl(')) {
+    return `hsla(${color.slice(4, -1)}, ${opacity})`;
+  }
+  if (color.startsWith('hsla(')) {
+    const parts = color.slice(5, -1).split(',');
+    return `hsla(${parts[0]}, ${parts[1]}, ${parts[2]}, ${opacity})`;
+  }
+  if (color.startsWith('#')) {
+    let hex = color.slice(1);
+    if (hex.length === 3) {
+      hex = hex
+        .split('')
+        .map((c) => c + c)
+        .join('');
+    }
+    if (hex.length === 6) {
+      const r = parseInt(hex.slice(0, 2), 16);
+      const g = parseInt(hex.slice(2, 4), 16);
+      const b = parseInt(hex.slice(4, 6), 16);
+      return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+    }
+  }
+  if (color.startsWith('rgb(')) {
+    return `rgba(${color.slice(4, -1)}, ${opacity})`;
+  }
+  if (color.startsWith('rgba(')) {
+    const parts = color.slice(5, -1).split(',');
+    return `rgba(${parts[0]}, ${parts[1]}, ${parts[2]}, ${opacity})`;
+  }
+  return `color-mix(in srgb, ${color} ${Math.round(opacity * 100)}%, transparent)`;
+};
+
+export const getContrastTextColor = (color) => {
+  if (!color) return '#ffffff';
+  const hslMatch = color.match(/hsla?\(\s*\d+\s*,\s*[\d.]+%\s*,\s*([\d.]+)%/);
+  if (hslMatch) {
+    const lightness = parseFloat(hslMatch[1]);
+    return lightness > 65 ? '#000000' : '#ffffff';
+  }
+  if (color.startsWith('#')) {
+    let hex = color.slice(1);
+    if (hex.length === 3) {
+      hex = hex
+        .split('')
+        .map((c) => c + c)
+        .join('');
+    }
+    if (hex.length === 6) {
+      const r = parseInt(hex.slice(0, 2), 16);
+      const g = parseInt(hex.slice(2, 4), 16);
+      const b = parseInt(hex.slice(4, 6), 16);
+      const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+      return yiq >= 150 ? '#000000' : '#ffffff';
+    }
+  }
+  return '#ffffff';
+};

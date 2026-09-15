@@ -18,7 +18,7 @@ interface PlayerProps {
   clues: CluesJson;
   currentCursor?: Cursor;
   id: string;
-  updateCursor(nCursor: CellCoords): void;
+  updateCursor(nCursor: CellCoords & {direction?: 'across' | 'down'}): void;
   users: any;
   frozen: any;
   myColor: any;

@@ -3,9 +3,10 @@ import * as _ from 'lodash';
 import clsx from 'clsx';
 import {FaNoteSticky} from 'react-icons/fa6';
 
-import {Ping, CellStyles} from './types';
+import {Ping, CellStyles, OtherSelection} from './types';
 import './css/cell.css';
 import {CellData, Cursor} from '../../shared/types';
+import {getTranslucentColor, getContrastTextColor} from '../../lib/colors';
 
 export interface EnhancedCellData extends CellData {
   r: number;
@@ -13,6 +14,7 @@ export interface EnhancedCellData extends CellData {
 
   // Player interactions
   cursors: Cursor[];
+  otherSelections?: OtherSelection[];
   pings: Ping[];
   solvedByIconSize: number;
 
@@ -53,7 +55,7 @@ export default class Cell extends React.Component<Props> {
   private touchStart: {pageX: number; pageY: number} = {pageX: 0, pageY: 0};
 
   shouldComponentUpdate(nextProps: Props) {
-    const pathsToOmit = ['cursors', 'pings', 'cellStyle'] as const;
+    const pathsToOmit = ['cursors', 'pings', 'cellStyle', 'otherSelections'] as const;
     if (!_.isEqual(_.omit(nextProps, ...pathsToOmit), _.omit(this.props, pathsToOmit))) {
       return true;
     }
@@ -64,8 +66,71 @@ export default class Cell extends React.Component<Props> {
     return false;
   }
 
+  renderOtherSelection() {
+    const {otherSelections, selected} = this.props;
+    if (!otherSelections || otherSelections.length === 0 || selected) {
+      return null;
+    }
+
+    const count = otherSelections.length;
+    let style: React.CSSProperties;
+    const names = otherSelections.map((s) => s.displayName || 'Player').join(', ');
+
+    if (count === 1) {
+      const tint = getTranslucentColor(otherSelections[0].color, 0.22);
+      style = {backgroundColor: tint};
+    } else {
+      const step = 100 / count;
+      const stops = otherSelections
+        .map((sel, idx) => {
+          const tint = getTranslucentColor(sel.color, 0.22);
+          const start = (idx * step).toFixed(1);
+          const end = ((idx + 1) * step).toFixed(1);
+          return `${tint} ${start}%, ${tint} ${end}%`;
+        })
+        .join(', ');
+      style = {backgroundImage: `linear-gradient(135deg, ${stops})`};
+    }
+
+    return <div className="cell--other-selection" style={style} title={`Selected by ${names}`} />;
+  }
+
+  renderCursorBadges() {
+    const {cursors, r} = this.props;
+    if (!cursors || cursors.length === 0) return null;
+
+    const activeCursors = cursors.filter((c) => c.active !== false);
+    if (activeCursors.length === 0) return null;
+
+    const isTopRow = r === 0;
+
+    return (
+      <div className={clsx('cell--cursor-badges', {'top-row': isTopRow})}>
+        {activeCursors.map(({id: cursorId, color, displayName}) => {
+          const name = displayName || 'Player';
+          const textColor = getContrastTextColor(color || '');
+          return (
+            <div
+              key={cursorId}
+              className="cell--cursor-badge"
+              style={{
+                backgroundColor: color || '#3b82f6',
+                color: textColor,
+              }}
+              title={name}
+            >
+              {name}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
   renderCursors() {
     const {cursors} = this.props;
+    if (!cursors || cursors.length === 0) return null;
+
     return (
       <div className="cell--cursors">
         {cursors.map(({id: cursorId, color, active}, i) => (
@@ -78,10 +143,11 @@ export default class Cell extends React.Component<Props> {
             style={{
               borderColor: color,
               zIndex: Math.min(2 + cursors.length - i, 9),
-              borderWidth: Math.min(1 + 2 * (i + 1), 12),
+              inset: `${i * 2}px`,
             }}
           />
         ))}
+        {this.renderCursorBadges()}
       </div>
     );
   }
@@ -265,7 +331,15 @@ export default class Cell extends React.Component<Props> {
 
     const l = Math.max(1, val.length);
 
-    const displayNames = this.props.cursors.map((cursor) => cursor.displayName).join(', ');
+    const cursorNames = this.props.cursors.map((cursor) => cursor.displayName).filter(Boolean);
+    const otherWordNames = (this.props.otherSelections || [])
+      .filter((s) => !s.isActiveSquare)
+      .map((s) => s.displayName)
+      .filter(Boolean);
+    const tooltipParts: string[] = [];
+    if (cursorNames.length > 0) tooltipParts.push(`Cursor: ${cursorNames.join(', ')}`);
+    if (otherWordNames.length > 0) tooltipParts.push(`Selecting: ${otherWordNames.join(', ')}`);
+    const displayNames = tooltipParts.length > 0 ? tooltipParts.join(' | ') : undefined;
 
     const style = this.getStyle();
 
@@ -291,6 +365,7 @@ export default class Cell extends React.Component<Props> {
         onContextMenu={this.handleRightClick}
       >
         <div className="cell--wrapper">
+          {this.renderOtherSelection()}
           <div
             className={clsx('cell--number', {
               nonempty: !!number,

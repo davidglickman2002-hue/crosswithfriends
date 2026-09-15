@@ -74,6 +74,7 @@ export interface Cursor {
   r: number; // Row in puzzle
   c: number; // Column in puzzle
   timestamp: number;
+  direction?: 'across' | 'down';
   color?: string;
   active?: boolean;
   displayName?: string;

@@ -281,6 +281,17 @@ describe('reduce — updateCursor', () => {
     expect(game.cursors).toHaveLength(1);
     expect(game.cursors[0]).toMatchObject({r: 1, c: 0, id: 'user1'});
   });
+
+  it('stores cursor direction when provided', () => {
+    let game = makeGame();
+    game = reduce(game, {
+      type: 'updateCursor',
+      timestamp: 2000,
+      params: {cell: {r: 0, c: 2}, direction: 'down', id: 'user1', timestamp: 2000},
+    });
+    expect(game.cursors).toHaveLength(1);
+    expect(game.cursors[0]).toMatchObject({r: 0, c: 2, direction: 'down', id: 'user1'});
+  });
 });
 
 describe('reduce — unknown action type', () => {

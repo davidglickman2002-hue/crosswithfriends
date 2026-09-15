@@ -90,6 +90,13 @@ export default class Player extends Component {
       window.visualViewport.addEventListener('resize', this.updateSize);
     }
     this.updateSize();
+    if (this.props.updateCursor && this.selected) {
+      this.props.updateCursor({
+        r: this.selected.r,
+        c: this.selected.c,
+        direction: this.state.direction,
+      });
+    }
   }
 
   componentDidUpdate(prevProps) {
@@ -172,9 +179,18 @@ export default class Player extends Component {
 
   setDirection(direction) {
     if (this.isValidDirection(direction, this.selected)) {
-      this.setState({
-        direction,
-      });
+      this.setState(
+        {
+          direction,
+        },
+        () => {
+          this.props.updateCursor({
+            r: this.selected.r,
+            c: this.selected.c,
+            direction,
+          });
+        }
+      );
     }
   }
 
@@ -202,21 +218,23 @@ export default class Player extends Component {
             this.props.updateCursor({
               r: selected.r,
               c: selected.c,
+              direction: this.state.direction,
             });
           }
         );
       }
     } else if (this.isValidDirection(gameUtils.getOppositeDirection(this.state.direction), selected)) {
+      const nextDirection = gameUtils.getOppositeDirection(this.state.direction);
       this.setState(
         {
           selected,
-
-          direction: gameUtils.getOppositeDirection(this.state.direction),
+          direction: nextDirection,
         },
         () => {
           this.props.updateCursor({
             r: selected.r,
             c: selected.c,
+            direction: nextDirection,
           });
         }
       );

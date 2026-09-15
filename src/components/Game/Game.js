@@ -175,12 +175,12 @@ export default class Game extends Component {
     }
   }
 
-  handleUpdateCursor = ({r, c}) => {
+  handleUpdateCursor = ({r, c, direction}) => {
     const {id} = this.props;
     if (this.game.solved && !_.find(this.game.cursors, (cursor) => cursor.id === id)) {
       return;
     }
-    this.gameModel.updateCursor(r, c, id);
+    this.gameModel.updateCursor(r, c, id, direction);
   };
 
   handleAddPing = ({r, c}) => {

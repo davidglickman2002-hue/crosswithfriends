@@ -2,7 +2,7 @@ import {GameEvent} from '../../shared/fencingGameEvents/types/GameEvent';
 import {CellCoords} from '../Grid/types';
 
 export interface PlayerActions {
-  updateCursor(nCursor: CellCoords): void;
+  updateCursor(nCursor: CellCoords & {direction?: 'across' | 'down'}): void;
   updateGrid(r: number, c: number, value: string): void;
   addPing(): void; // TODO
   startGame(): void;
@@ -17,8 +17,9 @@ export interface DispatchFn {
 // translate <Player/> callbacks to game events emitted
 // TODO: copy paste logic from src/components/Game.js
 export const usePlayerActions = (dispatch: DispatchFn, id: string): PlayerActions => ({
-  updateCursor(nCursor: CellCoords) {
-    dispatch({type: 'updateCursor', params: {cell: nCursor, id}});
+  updateCursor(nCursor: CellCoords & {direction?: 'across' | 'down'}) {
+    const {direction, ...cell} = nCursor;
+    dispatch({type: 'updateCursor', params: {cell, direction, id}});
   },
   updateGrid(r: number, c: number, value: string) {
     dispatch({type: 'updateCell', params: {cell: {r, c}, value, id}});

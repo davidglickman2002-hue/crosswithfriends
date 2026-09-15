@@ -435,13 +435,14 @@ export default class Game extends EventEmitter {
     });
   }
 
-  updateCursor(r, c, id) {
+  updateCursor(r, c, id, direction) {
     this.addEvent({
       timestamp: Date.now(),
       type: 'updateCursor',
       params: {
         timestamp: Date.now(),
         cell: {r, c},
+        direction,
         id,
       },
     });

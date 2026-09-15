@@ -14,6 +14,14 @@ export interface CellStyles extends React.CSSProperties {
 export interface Ping extends Cursor {
   age: number;
 }
+export interface OtherSelection {
+  id: string;
+  color: string;
+  displayName: string;
+  direction: 'across' | 'down';
+  isActiveSquare: boolean;
+}
+
 export type GridDataWithColor = (CellData & {attributionColor: string})[][];
 
 export type EnhancedGridData = EnhancedCellData[][];

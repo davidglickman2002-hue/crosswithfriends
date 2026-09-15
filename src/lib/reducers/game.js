@@ -95,6 +95,7 @@ const reducers = {
 
     const {
       cell: {r, c},
+      direction,
       id,
       timestamp,
     } = params;
@@ -105,6 +106,7 @@ const reducers = {
         {
           r,
           c,
+          direction,
           id,
           timestamp,
         },
