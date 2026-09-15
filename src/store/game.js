@@ -104,7 +104,7 @@ export default class Game extends EventEmitter {
     // these listeners were registered AFTER the join await, so a bounce
     // during the await would leave the new transport with no listeners
     // and the page would sit blank waiting for the create event.
-    socket.on('disconnect', () => {
+    this._onDisconnect = () => {
       console.log('received disconnect from server');
       // Force the reconnect handler to re-issue join_game before we
       // consider ourselves in the room again. Without resetting this, a
@@ -113,8 +113,8 @@ export default class Game extends EventEmitter {
       // that doesn't have a room membership yet — server rejects with
       // 'not in game' and flushOfflineQueue silently drops the event.
       this._joined = false;
-    });
-    socket.on('game_event', (event) => {
+    };
+    this._onGameEvent = (event) => {
       event = castNullsToUndefined(event);
       // Live events are server-stamped, so each one is a fresh sample of the
       // offset between server time and this device's clock. The game clock
@@ -122,43 +122,43 @@ export default class Game extends EventEmitter {
       // Date.now(), so a skewed local clock doesn't show up as solve time.
       recordServerTimestamp(event.timestamp);
       this.emitWSEvent(event);
-    });
+    };
     // Server broadcasts 'kicked' to the room when the owner kicks a player.
-    socket.on('kicked', (msg) => {
+    this._onKicked = (msg) => {
       if (msg && msg.gid === this.gid) {
         this.emit('kicked', msg);
       }
-    });
+    };
     // Owner toggled one of the per-action restrictions (check/reveal/reset).
     // Forward to listeners so the Toolbar can flip the gating live without
     // having to refetch /moderation.
-    socket.on('restrictions_changed', (msg) => {
+    this._onRestrictionsChanged = (msg) => {
       if (msg && msg.gid === this.gid) {
         this.emit('restrictionsChanged', msg);
       }
-    });
+    };
     // Owner locked or unlocked the game. The lock gate fires only on
     // join_game (existing players keep playing) so this is purely for
     // chat-side UX — showing players the room is now closed to new
     // joiners — and for keeping the owner-controls panel in sync across
     // tabs of the same account.
-    socket.on('lock_changed', (msg) => {
+    this._onLockChanged = (msg) => {
       if (msg && msg.gid === this.gid) {
         this.emit('lockChanged', msg);
       }
-    });
+    };
     // And 'unkicked' when a kick is reversed, so other tabs can drop the
     // dfac_id from their local kicked list without a full reload.
-    socket.on('unkicked', (msg) => {
+    this._onUnkicked = (msg) => {
       if (msg && msg.gid === this.gid) {
         this.emit('unkicked', msg);
       }
-    });
+    };
     // Reconnect handler — fires on every future 'connect' event on this
     // socket instance (the initial connect already fired before getSocket
-    // resolved). Re-issues join_game, re-runs initial sync if it never
-    // completed, and flushes queued events.
-    socket.on('connect', async () => {
+    // resolved). Re-issues join_game, unconditionally syncs all game events
+    // to catch any missed updates while disconnected, and flushes queued events.
+    this._onConnect = async () => {
       console.log('reconnecting...');
       const joinSentAt = Date.now();
       const ack = await emitAsync(socket, 'join_game', this.gid);
@@ -186,12 +186,18 @@ export default class Game extends EventEmitter {
       });
       this._joined = true;
       this.syncState = null;
-      if (!this._initialSyncCompleted) {
-        await this.syncAllGameEvents();
-      }
+      await this.syncAllGameEvents();
       await this.flushOfflineQueue();
       this.emitReconnect();
-    });
+    };
+
+    socket.on('disconnect', this._onDisconnect);
+    socket.on('game_event', this._onGameEvent);
+    socket.on('kicked', this._onKicked);
+    socket.on('restrictions_changed', this._onRestrictionsChanged);
+    socket.on('lock_changed', this._onLockChanged);
+    socket.on('unkicked', this._onUnkicked);
+    socket.on('connect', this._onConnect);
 
     // Initial join. Use a timeout so a mid-flight socket bounce (its ack
     // never arrives) doesn't hang attach() forever — the reconnect handler
@@ -234,6 +240,67 @@ export default class Game extends EventEmitter {
     }
   }
 
+  detach() {
+    if (this.socket) {
+      if (this._onDisconnect) this.socket.off('disconnect', this._onDisconnect);
+      if (this._onGameEvent) this.socket.off('game_event', this._onGameEvent);
+      if (this._onKicked) this.socket.off('kicked', this._onKicked);
+      if (this._onRestrictionsChanged) this.socket.off('restrictions_changed', this._onRestrictionsChanged);
+      if (this._onLockChanged) this.socket.off('lock_changed', this._onLockChanged);
+      if (this._onUnkicked) this.socket.off('unkicked', this._onUnkicked);
+      if (this._onConnect) this.socket.off('connect', this._onConnect);
+
+      if (this.socket.connected) {
+        try {
+          this.socket.emit('leave_game', this.gid);
+        } catch {
+          // ignore error if socket emit fails
+        }
+      }
+    }
+    this.removeAllListeners();
+  }
+
+  async resync() {
+    if (this.joinRejected) return;
+    if (!this.socket) {
+      await this.connectToWebsocket();
+    }
+    if (!this.socket?.connected) {
+      try {
+        this.socket?.connect();
+      } catch (e) {
+        console.warn('resync socket.connect failed:', e?.message);
+      }
+      return;
+    }
+    // Mobile devices can have zombie/half-dead TCP sockets after being suspended
+    // in background. We test liveness by re-issuing join_game with a timeout.
+    try {
+      const joinAck = await emitAsyncWithTimeout(this.socket, 5000, 'join_game', this.gid);
+      if (joinAck && joinAck.error) {
+        if (isTerminalJoinError(joinAck.error)) {
+          this.joinRejected = joinAck.error;
+          this.emit('joinRejected', {reason: joinAck.error, gid: this.gid});
+          return;
+        }
+      } else {
+        this._joined = true;
+      }
+      await this.syncAllGameEvents();
+      await this.flushOfflineQueue();
+      this.emitReconnect();
+    } catch (e) {
+      console.warn('Socket heartbeat/join timed out during resync, reconnecting socket:', e?.message);
+      try {
+        this.socket.disconnect();
+        this.socket.connect();
+      } catch (err) {
+        console.warn('Failed to force reconnect zombie socket:', err?.message);
+      }
+    }
+  }
+
   // Called when the local user is the kick target — drop the live socket
   // so they stop receiving live updates/chat even though the server-side
   // ban also blocks outgoing events. Matches the UX of being booted.
@@ -241,6 +308,7 @@ export default class Game extends EventEmitter {
   // socket globally, so without this, navigating to another game in the
   // same SPA tab would reuse the now-disconnected socket and never sync.
   forceDisconnect() {
+    this.detach();
     if (this.socket) {
       this.socket.disconnect();
       this.socket = null;

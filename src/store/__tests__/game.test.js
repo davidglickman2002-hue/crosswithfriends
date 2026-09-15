@@ -4,7 +4,10 @@ import {vi} from 'vitest';
 const mockSocket = {
   connected: true,
   on: vi.fn(),
+  off: vi.fn(),
   once: vi.fn(),
+  connect: vi.fn(),
+  disconnect: vi.fn(),
   emit: vi.fn((...args) => {
     // auto-ack
     const cb = args[args.length - 1];
@@ -32,7 +35,7 @@ vi.mock('@sentry/react', () => ({
 }));
 
 import Game from '../game';
-import {emitAsyncWithTimeout} from '../../sockets/emitAsync';
+import {emitAsync, emitAsyncWithTimeout} from '../../sockets/emitAsync';
 
 function makeGame() {
   const game = new Game('/game/test-123');
@@ -288,5 +291,113 @@ describe('optimistic events', () => {
 
     expect(optimistic).toHaveLength(1);
     expect(optimistic[0].type).toBe('updateCell');
+  });
+});
+
+// ---- Detach ----
+
+describe('detach', () => {
+  it('unregisters all socket event listeners and leaves game room', async () => {
+    const game = makeGame();
+    await game.connectToWebsocket();
+
+    const listener = vi.fn();
+    game.on('wsEvent', listener);
+
+    game.detach();
+
+    expect(mockSocket.off).toHaveBeenCalledWith('disconnect', expect.any(Function));
+    expect(mockSocket.off).toHaveBeenCalledWith('game_event', expect.any(Function));
+    expect(mockSocket.off).toHaveBeenCalledWith('kicked', expect.any(Function));
+    expect(mockSocket.off).toHaveBeenCalledWith('restrictions_changed', expect.any(Function));
+    expect(mockSocket.off).toHaveBeenCalledWith('lock_changed', expect.any(Function));
+    expect(mockSocket.off).toHaveBeenCalledWith('unkicked', expect.any(Function));
+    expect(mockSocket.off).toHaveBeenCalledWith('connect', expect.any(Function));
+    expect(mockSocket.emit).toHaveBeenCalledWith('leave_game', 'test-123');
+    expect(game.listenerCount('wsEvent')).toBe(0);
+  });
+});
+
+// ---- Resync ----
+
+describe('resync', () => {
+  it('connects disconnected socket', async () => {
+    const game = makeGame();
+    await game.connectToWebsocket();
+    mockSocket.connected = false;
+
+    await game.resync();
+
+    expect(mockSocket.connect).toHaveBeenCalled();
+  });
+
+  it('resyncs events and flushes queue when socket is connected', async () => {
+    const game = makeGame();
+    await game.connectToWebsocket();
+    emitAsyncWithTimeout.mockClear();
+
+    emitAsync.mockImplementation((_socket, event) => {
+      if (event === 'sync_all_game_events') {
+        return Promise.resolve([{type: 'create', params: {}}]);
+      }
+      return Promise.resolve();
+    });
+
+    const reconnectSpy = vi.fn();
+    game.on('reconnect', reconnectSpy);
+
+    await game.resync();
+
+    expect(emitAsyncWithTimeout).toHaveBeenCalledWith(mockSocket, 5000, 'join_game', 'test-123');
+    expect(emitAsync).toHaveBeenCalledWith(mockSocket, 'sync_all_game_events', 'test-123');
+    expect(reconnectSpy).toHaveBeenCalled();
+  });
+
+  it('detects zombie socket and forces reconnect when join_game times out', async () => {
+    const game = makeGame();
+    await game.connectToWebsocket();
+
+    emitAsyncWithTimeout.mockImplementation((_socket, _timeout, event) => {
+      if (event === 'join_game') {
+        return Promise.reject(new Error('timed out'));
+      }
+      return Promise.resolve();
+    });
+
+    await game.resync();
+
+    expect(mockSocket.disconnect).toHaveBeenCalled();
+    expect(mockSocket.connect).toHaveBeenCalled();
+
+    emitAsyncWithTimeout.mockImplementation(() => Promise.resolve());
+  });
+});
+
+// ---- Reconnect sync ----
+
+describe('reconnect sync', () => {
+  it('unconditionally syncs all game events on reconnect', async () => {
+    const game = makeGame();
+    await game.connectToWebsocket();
+
+    // Find the 'connect' handler registered on socket
+    const connectCall = mockSocket.on.mock.calls.find((call) => call[0] === 'connect');
+    expect(connectCall).toBeDefined();
+    const connectHandler = connectCall[1];
+
+    // Simulate initial sync completed
+    // eslint-disable-next-line no-underscore-dangle
+    game._initialSyncCompleted = true;
+
+    emitAsync.mockClear();
+    emitAsync.mockImplementation((_socket, event) => {
+      if (event === 'join_game') return Promise.resolve({serverReceivedAt: 1, serverTime: 2});
+      if (event === 'sync_all_game_events') return Promise.resolve([{type: 'create', params: {}}]);
+      return Promise.resolve();
+    });
+
+    await connectHandler();
+
+    expect(emitAsync).toHaveBeenCalledWith(mockSocket, 'sync_all_game_events', 'test-123');
   });
 });

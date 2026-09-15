@@ -267,7 +267,43 @@ class Game extends Component {
   componentDidMount() {
     this.initializeGame();
     this.maybeUndismiss();
+    document.addEventListener('visibilitychange', this.handleVisibilityChange);
+    window.addEventListener('pageshow', this.handlePageShow);
+    window.addEventListener('focus', this.handleFocus);
+    window.addEventListener('online', this.handleOnline);
   }
+
+  handleVisibilityChange = () => {
+    if (document.visibilityState === 'visible') {
+      this.triggerResync();
+    }
+  };
+
+  handlePageShow = () => {
+    this.triggerResync();
+  };
+
+  handleFocus = () => {
+    this.triggerResync();
+  };
+
+  handleOnline = () => {
+    this.triggerResync();
+  };
+
+  triggerResync = () => {
+    const now = Date.now();
+    if (this._lastResync && now - this._lastResync < 1000) {
+      return;
+    }
+    this._lastResync = now;
+    if (this.gameModel) {
+      this.gameModel.resync();
+    }
+    if (this.state.gid) {
+      this.fetchModerationState(this.state.gid);
+    }
+  };
 
   // Imperative refresh trigger handed to OwnerControls so a successful
   // lock/restriction toggle re-syncs the panel even if the socket bounces
@@ -309,10 +345,20 @@ class Game extends Component {
     if (this._retryTimer) clearInterval(this._retryTimer);
     if (this._connectionTimer) clearTimeout(this._connectionTimer);
     window.removeEventListener('resize', this.handleResize);
+    document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+    window.removeEventListener('pageshow', this.handlePageShow);
+    window.removeEventListener('focus', this.handleFocus);
+    window.removeEventListener('online', this.handleOnline);
+    if (this.gameModel) {
+      this.gameModel.detach();
+    }
   }
 
   componentDidUpdate(prevProps, prevState) {
     if (prevState.gid !== this.state.gid) {
+      if (this.gameModel) {
+        this.gameModel.detach();
+      }
       this.initializeGame();
     }
     if (!this._undismissed) {

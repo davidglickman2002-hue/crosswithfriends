@@ -90,6 +90,14 @@ export default class HistoryWrapper {
   }
 
   setCreateEvent(event) {
+    if (this.createEvent) {
+      if (event.params?.game?.solved && !this.createEvent.params?.game?.solved) {
+        this.createEvent = event;
+        event.gameTimestamp = 0;
+        this.initializeMemo();
+      }
+      return;
+    }
     this.createEvent = event;
     event.gameTimestamp = 0;
     this.initializeMemo();
@@ -98,8 +106,11 @@ export default class HistoryWrapper {
   addEvent(event) {
     window.timeStampOffset = event.timestamp - Date.now();
     this.optimisticEvents = this.optimisticEvents.filter((ev) => ev.id !== event.id);
-    // Dedup: skip if this event ID is already in history (can happen after reconnect retry)
-    if (event.id && this.history.some((e) => e.id === event.id)) {
+    // Dedup: skip if this event is already in history (can happen after reconnect/resync retry)
+    const isDuplicate = event.id
+      ? this.history.some((e) => e.id === event.id)
+      : this.history.some((e) => e.timestamp === event.timestamp && e.type === event.type);
+    if (isDuplicate) {
       return;
     }
     // we must support retroactive updates to the event log
