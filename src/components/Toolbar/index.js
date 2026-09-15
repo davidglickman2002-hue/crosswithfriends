@@ -642,15 +642,40 @@ export default class Toolbar extends Component {
       contest,
       replayMode,
       expandMenu,
+      title,
+      author,
+      type,
     } = this.props;
+
+    const displayTitle = (title && title.trim()) || '';
+    const displayAuthor = (author && author.trim()) || '';
 
     if (mobile) {
       return (
         <>
+          {displayTitle && (
+            <div className="toolbar--mobile-header">
+              <Link to="/" className="toolbar--mobile--back" aria-label="Home" title="Return to home">
+                <MdArrowBack className="toolbar--mobile-icon" />
+              </Link>
+              <div className="toolbar--mobile--title-wrap">
+                <span className="toolbar--mobile--title" title={displayTitle}>
+                  {displayTitle}
+                </span>
+                {displayAuthor && (
+                  <span className="toolbar--mobile--author" title={`By ${displayAuthor}`}>
+                    By {displayAuthor}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
           <div className="flex flex--align-center toolbar--mobile">
-            <Link to="/" className="toolbar--mobile--back" aria-label="Home" title="Return to home">
-              <MdArrowBack className="toolbar--mobile-icon" />
-            </Link>
+            {!displayTitle && (
+              <Link to="/" className="toolbar--mobile--back" aria-label="Home" title="Return to home">
+                <MdArrowBack className="toolbar--mobile-icon" />
+              </Link>
+            )}
             <div className="flex flex--grow flex--align-center toolbar--mobile--top">
               {!expandMenu ? (
                 <>
@@ -695,6 +720,20 @@ export default class Toolbar extends Component {
 
     return (
       <>
+        {displayTitle && (
+          <div className={`toolbar--header${this.props.chatHidden ? ' toolbar--header--chat-hidden' : ''}`}>
+            <div className="toolbar--header--title" title={displayTitle}>
+              {displayTitle}
+            </div>
+            {(displayAuthor || type) && (
+              <div className="toolbar--header--subtitle">
+                {type && <span className="toolbar--header--type">{type}</span>}
+                {type && displayAuthor && <span className="toolbar--header--divider"> • </span>}
+                {displayAuthor && <span className="toolbar--header--author">By {displayAuthor}</span>}
+              </div>
+            )}
+          </div>
+        )}
         <div className={`toolbar${this.props.chatHidden ? ' toolbar--chat-hidden' : ''}`}>
           <div className="toolbar--timer">
             {!solved && !replayMode && this.props.percentComplete > 0 && (

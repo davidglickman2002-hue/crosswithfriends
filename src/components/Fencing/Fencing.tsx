@@ -251,7 +251,10 @@ export const Fencing: React.FC<{gid: string}> = (props) => {
               {gameState.loaded && gameState.started && (
                 <>
                   {' '}
-                  <FencingToolbar toolbarActions={toolbarActions} />
+                  <FencingToolbar
+                    toolbarActions={toolbarActions}
+                    title={gameState.game?.info?.titleOverride || gameState.game?.info?.title}
+                  />
                   <Player
                     // eslint-disable-next-line react/jsx-props-no-spreading
                     {...transformGameToPlayerProps(

@@ -35,6 +35,19 @@
   color: var(--main-blue);
 }
 
+.fencing--toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.fencing--puzzle-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
 .fencing--scoreboard-container {
   display: flex;
   justify-content: space-around;
@@ -46,6 +59,10 @@
 }
 
 /* Dark mode */
+.dark .fencing--puzzle-title {
+  color: var(--dark-primary-text);
+}
+
 .dark .fencing--container {
   color: var(--dark-primary-text);
 }

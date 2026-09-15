@@ -1,7 +1,7 @@
 import React, {useCallback} from 'react';
 import {ToolbarActions} from './useToolbarActions';
 
-export const FencingToolbar: React.FC<{toolbarActions: ToolbarActions}> = (props) => {
+export const FencingToolbar: React.FC<{toolbarActions: ToolbarActions; title?: string}> = (props) => {
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
@@ -11,7 +11,8 @@ export const FencingToolbar: React.FC<{toolbarActions: ToolbarActions}> = (props
   );
 
   return (
-    <div>
+    <div className="fencing--toolbar">
+      {props.title && <div className="fencing--puzzle-title">{props.title}</div>}
       <button className="btn btn--small btn--contained" onMouseDown={handleMouseDown}>
         Reveal Cell
       </button>

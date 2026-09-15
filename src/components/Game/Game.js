@@ -516,11 +516,18 @@ export default class Game extends Component {
       expandMenu,
     } = this.state;
     const {lastUpdated: startTime, totalTime: pausedTime, paused: isPaused} = clock;
+    const info = this.game.info || {};
+    const title = info.titleOverride || info.title || 'Untitled Puzzle';
+    const author = info.authorOverride || info.author || '';
+    const type = info.type || '';
     return (
       <Toolbar
         v2
         gid={this.props.gid}
         pid={this.game.pid}
+        title={title}
+        author={author}
+        type={type}
         mobile={mobile}
         startTime={startTime}
         pausedTime={pausedTime}
