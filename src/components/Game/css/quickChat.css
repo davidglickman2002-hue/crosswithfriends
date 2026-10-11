@@ -1,0 +1,131 @@
+.quick-chat {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  font-family: inherit;
+}
+
+/* On mobile the on-screen keyboard owns the bottom of the play area, so the
+   button sits at the top instead and the composer opens below it. */
+.quick-chat--mobile {
+  top: 8px;
+  right: 8px;
+  bottom: auto;
+  flex-direction: column-reverse;
+}
+
+.quick-chat--button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  border: none;
+  border-radius: 999px;
+  background-color: var(--main-blue);
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 25%);
+  transition:
+    background-color 0.15s,
+    transform 0.15s;
+}
+
+.quick-chat--button:hover {
+  background-color: #4c92dd;
+}
+
+.quick-chat--button:active {
+  transform: scale(0.96);
+}
+
+.quick-chat--button.active {
+  background-color: var(--main-blue-3, #2f6fb5);
+}
+
+.quick-chat--button-icon {
+  font-size: 15px;
+}
+
+.quick-chat--panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 260px;
+  padding: 12px;
+  border-radius: 12px;
+  background-color: #fff;
+  box-shadow: 0 6px 24px rgb(0 0 0 / 22%);
+  animation: quick-chat-in 0.16s ease-out;
+}
+
+.quick-chat--hint {
+  font-size: 11px;
+  color: rgb(0 0 0 / 55%);
+}
+
+.quick-chat--input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid rgb(0 0 0 / 18%);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.quick-chat--input:focus {
+  outline: none;
+  border-color: var(--main-blue);
+  box-shadow: 0 0 0 3px rgb(106 169 244 / 20%);
+}
+
+.quick-chat--actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.quick-chat--mobile .quick-chat--panel {
+  width: min(260px, 78vw);
+}
+
+@keyframes quick-chat-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Dark mode */
+.dark .quick-chat--panel {
+  background-color: #1e1e1e;
+  box-shadow: 0 6px 24px rgb(0 0 0 / 55%);
+}
+
+.dark .quick-chat--hint {
+  color: rgb(255 255 255 / 55%);
+}
+
+.dark .quick-chat--input {
+  border-color: rgb(255 255 255 / 25%);
+  background-color: rgb(255 255 255 / 6%);
+  color: var(--dark-primary-text);
+}
+
+.dark .quick-chat--input:focus {
+  border-color: #6aa9f4;
+  box-shadow: 0 0 0 3px rgb(106 169 244 / 25%);
+}

@@ -608,15 +608,20 @@ export default class Game extends EventEmitter {
     });
   }
 
-  chat(username, id, text) {
+  /** cell: optional {r, c} the message should be pinned above for everyone. */
+  chat(username, id, text, cell) {
+    const params = {
+      text,
+      senderId: id,
+      sender: username,
+    };
+    if (cell && Number.isInteger(cell.r) && Number.isInteger(cell.c)) {
+      params.cell = {r: cell.r, c: cell.c};
+    }
     this.addEvent({
       timestamp: Date.now(),
       type: 'chat',
-      params: {
-        text,
-        senderId: id,
-        sender: username,
-      },
+      params,
     });
     this.addEvent({
       timestamp: Date.now(),

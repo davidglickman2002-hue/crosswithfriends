@@ -8,9 +8,11 @@ import Confetti from './Confetti.js';
 import Player from '../Player';
 import Toolbar from '../Toolbar';
 import MilestoneToast from './MilestoneToast';
+import QuickChat from './QuickChat';
 import RatingCompletionModal from './RatingCompletionModal';
 import {toArr} from '../../lib/jsUtils';
 import {toHex, darken, GREENISH} from '../../lib/colors';
+import {bubbleExpiryDelayMs, selectChatBubbles} from '../../lib/chatBubbles';
 import GridWrapper from '../../lib/wrappers/GridWrapper';
 
 const skipFilledSquaresKey = 'skip-filled-squares';
@@ -103,6 +105,7 @@ export default class Game extends Component {
 
   componentWillUnmount() {
     clearTimeout(this.milestoneTimeout);
+    clearTimeout(this.bubbleTimeout);
   }
 
   componentDidUpdate(prevProps) {
@@ -124,6 +127,32 @@ export default class Game extends Component {
       }
       this.setState({lastMilestone: initialMilestone, milestoneInitialized: true});
     }
+
+    this.scheduleBubbleExpiry();
+  }
+
+  // Quick-chat bubbles fade on their own, so re-render once the oldest visible
+  // one expires instead of polling on an interval.
+  scheduleBubbleExpiry() {
+    clearTimeout(this.bubbleTimeout);
+    this.bubbleTimeout = null;
+    const delay = bubbleExpiryDelayMs(this.chatMessages, Date.now());
+    if (delay == null) return;
+    this.bubbleTimeout = setTimeout(() => {
+      this.bubbleTimeout = null;
+      if (this.game) this.forceUpdate();
+    }, delay + 50);
+  }
+
+  get chatMessages() {
+    const game = this.game;
+    return (game && game.chat && game.chat.messages) || [];
+  }
+
+  get chatBubbles() {
+    const game = this.game;
+    if (!game) return [];
+    return selectChatBubbles(this.chatMessages, game.users, Date.now());
   }
 
   get game() {
@@ -186,6 +215,21 @@ export default class Game extends Component {
   handleAddPing = ({r, c}) => {
     const {id} = this.props;
     this.gameModel.addPing(r, c, id);
+  };
+
+  // Sends a chat message pinned to the currently selected square, so it shows
+  // up as a bubble above that cell for everyone (and in the chat log).
+  handleQuickChat = (text) => {
+    const {id, onChat} = this.props;
+    const game = this.game;
+    if (!onChat || !game || !text) return;
+    const user = (game.users && game.users[id]) || {};
+    const selected =
+      (this.player && this.player.getSelectedSquares && this.player.getSelectedSquares()) || [];
+    const first = selected[0];
+    const cell = first ? {r: first.r, c: first.c} : undefined;
+    onChat(user.displayName || 'Player', id, text, cell);
+    this.handleRefocus();
   };
 
   handleUpdateColor = (id, color) => {
@@ -463,6 +507,7 @@ export default class Game extends Component {
         id={id}
         cursors={cursors}
         pings={pings}
+        bubbles={this.chatBubbles}
         users={users}
         frozen={solved || this.props.syncFailed}
         myColor={myColor}
@@ -597,9 +642,17 @@ export default class Game extends Component {
           className={`flex flex--grow${this.props.mobile ? ' player--mobile-container' : ''}`}
           style={{
             padding,
+            position: 'relative',
           }}
         >
           {this.renderPlayer()}
+          {this.props.onChat && (
+            <QuickChat
+              onSend={this.handleQuickChat}
+              onClose={this.handleRefocus}
+              mobile={!!this.props.mobile}
+            />
+          )}
         </div>
         {this.game.solved && <Confetti />}
         {this.game?.pid && (

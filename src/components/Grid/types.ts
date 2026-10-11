@@ -22,6 +22,18 @@ export interface OtherSelection {
   isActiveSquare: boolean;
 }
 
+// A quick-chat message pinned to the square it was sent from.
+export interface ChatBubble {
+  key: string;
+  r: number;
+  c: number;
+  text: string;
+  sender: string;
+  senderId: string;
+  color?: string;
+  timestamp: number;
+}
+
 export type GridDataWithColor = (CellData & {attributionColor: string})[][];
 
 export type EnhancedGridData = EnhancedCellData[][];

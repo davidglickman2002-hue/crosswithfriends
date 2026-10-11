@@ -252,6 +252,36 @@ describe('reduce — chat', () => {
     expect(game.chat.messages[0].text).toBe('first');
     expect(game.chat.messages[1].text).toBe('second');
   });
+
+  it('keeps the cell a quick-chat message was pinned to', () => {
+    let game = makeGame();
+    game = reduce(game, {
+      type: 'chat',
+      timestamp: 2000,
+      params: {text: 'look here', senderId: 'u1', sender: 'Alice', cell: {r: 2, c: 3}},
+    });
+    expect(game.chat.messages[0].cell).toEqual({r: 2, c: 3});
+  });
+
+  it('omits the cell for ordinary chat messages', () => {
+    let game = makeGame();
+    game = reduce(game, {
+      type: 'chat',
+      timestamp: 2000,
+      params: {text: 'hello', senderId: 'u1', sender: 'Alice'},
+    });
+    expect(game.chat.messages[0]).not.toHaveProperty('cell');
+  });
+
+  it('ignores malformed cells', () => {
+    let game = makeGame();
+    game = reduce(game, {
+      type: 'chat',
+      timestamp: 2000,
+      params: {text: 'hello', senderId: 'u1', sender: 'Alice', cell: {r: '2', c: 3}},
+    });
+    expect(game.chat.messages[0]).not.toHaveProperty('cell');
+  });
 });
 
 describe('reduce — updateCursor', () => {

@@ -3,7 +3,7 @@ import * as _ from 'lodash';
 import clsx from 'clsx';
 import {FaNoteSticky} from 'react-icons/fa6';
 
-import {Ping, CellStyles, OtherSelection} from './types';
+import {Ping, CellStyles, OtherSelection, ChatBubble} from './types';
 import './css/cell.css';
 import {CellData, Cursor} from '../../shared/types';
 import {getTranslucentColor, getContrastTextColor} from '../../lib/colors';
@@ -16,6 +16,7 @@ export interface EnhancedCellData extends CellData {
   cursors: Cursor[];
   otherSelections?: OtherSelection[];
   pings: Ping[];
+  bubbles?: ChatBubble[];
   solvedByIconSize: number;
 
   // Cell states
@@ -55,7 +56,7 @@ export default class Cell extends React.Component<Props> {
   private touchStart: {pageX: number; pageY: number} = {pageX: 0, pageY: 0};
 
   shouldComponentUpdate(nextProps: Props) {
-    const pathsToOmit = ['cursors', 'pings', 'cellStyle', 'otherSelections'] as const;
+    const pathsToOmit = ['cursors', 'pings', 'bubbles', 'cellStyle', 'otherSelections'] as const;
     if (!_.isEqual(_.omit(nextProps, ...pathsToOmit), _.omit(this.props, pathsToOmit))) {
       return true;
     }
@@ -167,6 +168,24 @@ export default class Cell extends React.Component<Props> {
               zIndex: Math.min(2 + pings.length - i, 9),
             }}
           />
+        ))}
+      </div>
+    );
+  }
+
+  // Quick-chat messages pinned to this square. Purely decorative — pointer
+  // events are disabled so they never swallow a click on the cell.
+  renderChatBubbles() {
+    const {bubbles, r, c} = this.props;
+    if (!bubbles || bubbles.length === 0) return null;
+
+    return (
+      <div className={clsx('cell--chat-bubbles', {'top-row': r === 0, 'flush-left': c === 0})}>
+        {bubbles.map(({key, text, sender, color}) => (
+          <div key={key} className="cell--chat-bubble" style={{borderLeftColor: color || '#3b82f6'}}>
+            {sender && <span className="cell--chat-bubble--sender">{sender}</span>}
+            <span className="cell--chat-bubble--text">{text}</span>
+          </div>
         ))}
       </div>
     );
@@ -322,6 +341,7 @@ export default class Cell extends React.Component<Props> {
         >
           {black && this.renderImage()}
           {this.renderPings()}
+          {this.renderChatBubbles()}
         </div>
       );
     }
@@ -390,6 +410,7 @@ export default class Cell extends React.Component<Props> {
         </div>
         {this.renderCursors()}
         {this.renderPings()}
+        {this.renderChatBubbles()}
       </div>
     );
   }

@@ -456,8 +456,8 @@ class Game extends Component {
     }));
   };
 
-  handleChat = (username, id, message) => {
-    this.gameModel.chat(username, id, message);
+  handleChat = (username, id, message, cell) => {
+    this.gameModel.chat(username, id, message, cell);
   };
 
   handleUpdateDisplayName = (id, displayName) => {
@@ -591,6 +591,7 @@ class Game extends Component {
         onUnfocus={this.handleUnfocusGame}
         onChange={this.handleChange}
         onSolve={this.handleSolve}
+        onChat={this.handleChat}
         onToggleChat={this.handleToggleChat}
         chatHidden={this.state.chatHidden}
         mobile={mobile}

@@ -324,19 +324,22 @@ const reducers = {
 
   chat: (game, params, timestamp) => {
     let {chat} = game;
-    const {text, senderId, sender} = params;
+    const {text, senderId, sender, cell} = params;
     const {messages = []} = chat;
+    const message = {
+      text,
+      senderId,
+      sender,
+      timestamp,
+    };
+    // Quick-chat messages carry the cell they were sent from so every player
+    // can see them pop up above that square. Older messages have no cell.
+    if (cell && Number.isInteger(cell.r) && Number.isInteger(cell.c)) {
+      message.cell = {r: cell.r, c: cell.c};
+    }
     chat = {
       ...chat,
-      messages: [
-        ...messages,
-        {
-          text,
-          senderId,
-          sender,
-          timestamp,
-        },
-      ],
+      messages: [...messages, message],
     };
 
     return {

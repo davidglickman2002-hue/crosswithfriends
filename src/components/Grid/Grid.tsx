@@ -5,7 +5,15 @@ import GridWrapper from '../../lib/wrappers/GridWrapper';
 import RerenderBoundary from '../RerenderBoundary';
 import {hashGridRow} from './hashGridRow';
 import Cell from './Cell';
-import {GridDataWithColor, CellCoords, ClueCoords, CellStyles, Ping, OtherSelection} from './types';
+import {
+  GridDataWithColor,
+  CellCoords,
+  ClueCoords,
+  CellStyles,
+  Ping,
+  OtherSelection,
+  ChatBubble,
+} from './types';
 import {CellIndex, ColoredShade, Cursor, ShadeEntry, toCellIndex} from '../../shared/types';
 
 export interface GridProps {
@@ -23,6 +31,7 @@ export interface GridProps {
   images?: Record<number, string>;
   pings?: Ping[];
   cursors: Cursor[];
+  bubbles?: ChatBubble[];
 
   // Styles & related
   references: ClueCoords[];
@@ -179,6 +188,7 @@ export default class Grid extends React.PureComponent<GridProps> {
         cursors: (this.props.cursors || []).filter((cursor) => cursor.r === r && cursor.c === c),
         otherSelections: otherSelectionsMap[`${r}_${c}`] || [],
         pings: (this.props.pings || []).filter((ping) => ping.r === r && ping.c === c),
+        bubbles: (this.props.bubbles || []).filter((bubble) => bubble.r === r && bubble.c === c),
         highlighted: this.isHighlighted(r, c),
         myColor: this.props.myColor,
         frozen: this.props.frozen,

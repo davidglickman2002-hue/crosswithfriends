@@ -277,6 +277,78 @@ div:focus .cell.referenced {
   text-shadow: 0 1px 2px rgb(0 0 0 / 30%);
 }
 
+/* Quick chat: a short message pinned above the square it was sent from. */
+.cell--chat-bubbles {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  z-index: 30;
+  pointer-events: none;
+
+  /* A cell is only ~50px wide, so without this the absolutely positioned
+     container shrink-to-fits to the cell and every message wraps. */
+  width: max-content;
+}
+
+/* The top row has no room above it, so its bubbles hang below the cell. */
+.cell--chat-bubbles.top-row {
+  bottom: auto;
+  top: calc(100% + 6px);
+}
+
+/* First column: pin to the cell instead of centering, so the bubble cannot
+   spill past the left edge of the grid. */
+.cell--chat-bubbles.flush-left {
+  left: 0;
+  transform: none;
+}
+
+.cell--chat-bubble {
+  width: max-content;
+  max-width: 190px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  border-left: 3px solid var(--main-blue);
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 30%);
+  color: rgb(0 0 0 / 87%);
+  font-size: 11px;
+  line-height: 1.3;
+  text-align: left;
+  overflow-wrap: break-word;
+  animation: chat-bubble-in 0.16s ease-out;
+}
+
+.cell--chat-bubble--sender {
+  display: block;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+.cell--chat-bubble--text {
+  display: block;
+}
+
+@keyframes chat-bubble-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .cell--ping {
   border-radius: 100%;
   width: 100%;

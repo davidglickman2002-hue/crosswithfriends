@@ -126,6 +126,18 @@
   background-color: rgb(255 255 255 / 25%) !important;
 }
 
+/* Quick-chat bubbles pinned above a cell */
+.dark .cell--chat-bubble {
+  border-left-color: #6aa9f4;
+  background-color: #1e1e1e;
+  color: var(--dark-primary-text);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 60%);
+}
+
+.dark .cell--chat-bubble--sender {
+  color: var(--dark-primary-text);
+}
+
 .dark .clues--list--scroll {
   background-color: var(--dark-background-1);
   border-top-color: #555;
