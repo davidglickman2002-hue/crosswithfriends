@@ -42,6 +42,25 @@ const PING_TIMEOUT = 10000;
  *
  * */
 
+// Lists the players whose cursor is currently active. Pure, so it lives outside
+// the class rather than being a method that ignores `this`.
+function renderActivePlayers(activeCursors) {
+  if (!activeCursors || activeCursors.length === 0) return null;
+  return (
+    <div className="player--active-players">
+      <div className="player--active-players--title">Players</div>
+      <div className="player--active-players--list">
+        {activeCursors.map((cursor) => (
+          <div key={cursor.id} className="player--active-players--item">
+            <span className="player--active-players--color-dot" style={{backgroundColor: cursor.color}} />
+            <span className="player--active-players--name">{cursor.displayName || 'Player'}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default class Player extends Component {
   constructor(props) {
     super(props);
@@ -422,6 +441,7 @@ export default class Player extends Component {
         color: users[cursor.id]?.color || 'blue',
         displayName: users[cursor.id]?.displayName || '',
       }));
+    const activeOtherCursors = cursors.filter((cursor) => cursor.active);
     const pings = allPings
       .map((ping) => ({
         ...ping,
@@ -549,6 +569,7 @@ export default class Player extends Component {
               </div>
             </div>
           </MobileGridControls>
+          {renderActivePlayers(activeOtherCursors)}
         </div>
       );
     }
@@ -653,6 +674,7 @@ export default class Player extends Component {
             <div className="player--main--clues">
               <Clues {...clueProps} />
             </div>
+            {renderActivePlayers(activeOtherCursors)}
           </div>
         </GridControls>
         {this.props.beta && (

@@ -139,15 +139,15 @@ export default class MobileGridControls extends GridControls {
         translateX = _.clamp(translateX, -tX, rect.width - tX - size * scale);
       }
 
-      // Only adjust vertical panning if the cell is significantly off-screen
-      // (above the viewport or behind the keyboard). The tolerance prevents
-      // small pans when cells are right at the boundary.
-      const TOLERANCE = size * scale; // one cell height of slack
+      // Only adjust vertical panning if the cell is off-screen.
+      // We check if cellScreenY < 0 (clipped at top) or cellBottom > visibleHeight (clipped by clue bar at bottom).
       const cellScreenY = tY + translateY;
       const cellBottom = cellScreenY + size * scale;
-      if (cellScreenY < -TOLERANCE || cellBottom > visibleHeight + TOLERANCE) {
+      if (cellScreenY < 0 || cellBottom > visibleHeight) {
         translateY = _.clamp(translateY, -tY, visibleHeight - tY - size * scale);
       }
+      // Guarantee translateY never scrolls below minY so bottom row is never pushed behind clue bar
+      translateY = Math.max(translateY, minY);
     }
 
     // Skip setState if nothing actually changed — avoids unnecessary re-renders

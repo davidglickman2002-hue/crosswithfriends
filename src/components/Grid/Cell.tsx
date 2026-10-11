@@ -147,7 +147,6 @@ export default class Cell extends React.Component<Props> {
             }}
           />
         ))}
-        {this.renderCursorBadges()}
       </div>
     );
   }

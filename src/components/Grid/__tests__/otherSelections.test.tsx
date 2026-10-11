@@ -228,7 +228,7 @@ describe('Cell component otherSelections and badges rendering', () => {
     expect(wash?.getAttribute('title')).toBe('Selected by Alice, Bob');
   });
 
-  it('renders a floating name badge for active cursor squares', async () => {
+  it('renders cursor borders and does not render floating name badges inside cells', async () => {
     const cursors = [
       {
         id: 'p1',
@@ -243,35 +243,14 @@ describe('Cell component otherSelections and badges rendering', () => {
 
     await renderComponent(<Cell {...baseProps} cursors={cursors} />);
     const badgeContainer = container.querySelector('.cell--cursor-badges');
-    expect(badgeContainer).not.toBeNull();
-    expect(badgeContainer?.classList.contains('top-row')).toBe(false);
+    expect(badgeContainer).toBeNull();
 
-    const badge = container.querySelector('.cell--cursor-badge');
-    expect(badge).not.toBeNull();
-    expect(badge?.textContent).toBe('Charlie');
-    expect(badge?.getAttribute('style')).toContain('background-color: rgb(59, 130, 246)');
+    const cursorOutline = container.querySelector('.cell--cursor');
+    expect(cursorOutline).not.toBeNull();
+    expect(cursorOutline?.getAttribute('style')).toContain('border-color: rgb(59, 130, 246)');
   });
 
-  it('applies top-row class to badges when r === 0', async () => {
-    const cursors = [
-      {
-        id: 'p1',
-        r: 0,
-        c: 2,
-        timestamp: Date.now(),
-        color: '#3b82f6',
-        displayName: 'Charlie',
-        active: true,
-      },
-    ];
-
-    await renderComponent(<Cell {...baseProps} r={0} c={2} cursors={cursors} />);
-    const badgeContainer = container.querySelector('.cell--cursor-badges');
-    expect(badgeContainer).not.toBeNull();
-    expect(badgeContainer?.classList.contains('top-row')).toBe(true);
-  });
-
-  it('renders multiple badges side-by-side when players overlap on the same square', async () => {
+  it('renders multiple cursor outlines with offset insets when players overlap', async () => {
     const cursors = [
       {
         id: 'p1',
@@ -295,9 +274,7 @@ describe('Cell component otherSelections and badges rendering', () => {
 
     await renderComponent(<Cell {...baseProps} cursors={cursors} />);
     const badges = container.querySelectorAll('.cell--cursor-badge');
-    expect(badges).toHaveLength(2);
-    expect(badges[0].textContent).toBe('Alice');
-    expect(badges[1].textContent).toBe('Bob');
+    expect(badges).toHaveLength(0);
 
     const cursorOutlines = container.querySelectorAll('.cell--cursor');
     expect(cursorOutlines).toHaveLength(2);
