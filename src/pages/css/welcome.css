@@ -652,6 +652,62 @@ p {
   height: 15px;
 }
 
+/* Collapsible filter bar. When the panel is folded the hero keeps one compact
+   row, so the list of puzzles starts right below it — which is what makes the
+   home page usable on a phone. */
+.welcome--filters-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.welcome--filters-toggle {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid rgb(0 0 0 / 12%);
+  border-radius: 999px;
+  background-color: #fff;
+  color: rgb(0 0 0 / 70%);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+
+.welcome--filters-toggle:hover,
+.welcome--filters-toggle.active {
+  border-color: var(--main-blue);
+  color: var(--main-blue);
+}
+
+.welcome--filters-toggle-icon {
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+}
+
+.welcome--filters-summary {
+  overflow: hidden;
+  max-width: 45vw;
+  color: rgb(0 0 0 / 55%);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.welcome--filters-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 /* Publication badge on each puzzle card. */
 .entry--source {
   align-self: flex-start;

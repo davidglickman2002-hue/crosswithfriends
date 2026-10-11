@@ -101,6 +101,16 @@ test.describe('Puzzle list', () => {
     await expect(page.locator('.welcome--chip[data-source-id="nyt"]')).toHaveClass(/active/);
     await expect(page.locator('.welcome--chip--all')).not.toHaveClass(/active/);
 
+    // The visible list itself must be restricted to that publication: the
+    // client filters journals too, so the list stays correct even against a
+    // backend that predates the sourceFilter query param.
+    await expect(page.locator('.entry--source').first()).toHaveText('NY Times', {timeout: 15_000});
+    const badges = await page.locator('.entry--source').allTextContents();
+    expect(badges.length).toBeGreaterThan(0);
+    for (const badge of badges) {
+      expect(badge).toBe('NY Times');
+    }
+
     // "All journals" clears it again.
     const cleared = page.waitForResponse(
       (r) => r.url().includes('/api/puzzle_list') && r.url().includes('sourceFilter%5D=&')
@@ -108,6 +118,33 @@ test.describe('Puzzle list', () => {
     await page.locator('.welcome--chip--all').click();
     await cleared;
     expect(page.url()).not.toContain('source=nyt');
+
+    assertNoFatalErrors(consoleErrors);
+  });
+
+  test('filter panel collapses, remembers the choice, and reopens', async ({smoke}) => {
+    const {page, consoleErrors} = smoke;
+
+    await page.goto('/');
+    await assertPageRendered(page);
+    await expect(page.locator('.entry').first()).toBeVisible({timeout: 15_000});
+
+    // Desktop starts with the controls expanded.
+    await expect(page.locator('.welcome--chip').first()).toBeVisible();
+
+    await page.locator('.welcome--filters-toggle').click();
+    await expect(page.locator('.welcome--chip').first()).toBeHidden();
+    await expect(page.locator('.welcome--filters-toggle')).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.locator('.welcome--filters-summary')).toHaveText('All puzzles');
+
+    // The choice is remembered across visits.
+    await page.reload();
+    await expect(page.locator('.entry').first()).toBeVisible({timeout: 15_000});
+    await expect(page.locator('.welcome--chip').first()).toBeHidden();
+
+    // ...and the panel opens again on demand.
+    await page.locator('.welcome--filters-toggle').click();
+    await expect(page.locator('.welcome--chip').first()).toBeVisible();
 
     assertNoFatalErrors(consoleErrors);
   });

@@ -9,7 +9,7 @@ import getLocalId from '../../localAuth';
 import AuthContext from '../../lib/AuthContext';
 import './css/puzzleList.css';
 import Entry, {EntryProps} from './Entry';
-import {classifyPuzzleSource} from '../../shared/puzzle_source';
+import {classifyPuzzleSource, normalizeSourceFilter} from '../../shared/puzzle_source';
 
 interface PuzzleStatuses {
   [pid: string]: 'solved' | 'started';
@@ -25,6 +25,13 @@ interface NewPuzzleListProps {
   uploadedPuzzles: number;
   fencing?: boolean;
 }
+
+// A narrow filter (one journal, one size) can match only a handful of the
+// newest fifty puzzles, which would look like a broken, almost-empty list.
+// When that happens we keep pulling pages until the list has something to
+// scroll, up to a bound so a truly empty filter cannot spin forever.
+const MIN_VISIBLE_ENTRIES = 12;
+const AUTO_FILL_MAX_PAGES = 8;
 
 const NewPuzzleList: React.FC<NewPuzzleListProps> = (props) => {
   const {accessToken, user, preferences} = useContext(AuthContext) as {
@@ -118,50 +125,97 @@ const NewPuzzleList: React.FC<NewPuzzleListProps> = (props) => {
     return scrollTop + clientHeight + buffer > scrollHeight;
   }, []);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const fetchMore = React.useCallback(
-    _.throttle(
-      async (
-        currentPuzzles: {
-          pid: string;
-          content: PuzzleJson;
-          stats: PuzzleStatsJson;
-          isPublic?: boolean;
-        }[],
-        currentPage: number
-      ) => {
-        if (loading) return;
-        setLoading(true);
-        try {
-          setError(null);
-          const nextPage = await fetchPuzzleList(
-            {page: currentPage, pageSize, filter: props.filter},
-            accessToken
-          );
+  // Identity of the active filter: which puzzle list is on screen, and a token
+  // that invalidates responses from a filter that has since been superseded.
+  const filterKey = JSON.stringify(props.filter);
+  const generationRef = useRef(0);
+  const autoFillPagesRef = useRef(0);
+  const inFlightRef = useRef(0);
+  const reloadKeyRef = useRef<string | null>(null);
+  const [loadedFilterKey, setLoadedFilterKey] = useState<string | null>(null);
+  const [pendingFilterKey, setPendingFilterKey] = useState<string>(filterKey);
+
+  // filterKey already carries every filter field, so it stands in for
+  // props.filter in the dependency list below.
+  const performFetch = React.useCallback(
+    async (
+      currentPuzzles: {
+        pid: string;
+        content: PuzzleJson;
+        stats: PuzzleStatsJson;
+        isPublic?: boolean;
+      }[],
+      currentPage: number,
+      options?: {reload?: boolean}
+    ) => {
+      const reload = options?.reload === true;
+      // Appending has to wait for the pages before it. A reload does not: it is
+      // for a brand new filter, and whatever is in flight is discarded below.
+      if (!reload && inFlightRef.current > 0) return;
+      if (reload) {
+        if (reloadKeyRef.current === filterKey && inFlightRef.current > 0) return;
+        reloadKeyRef.current = filterKey;
+      }
+      const generation = generationRef.current;
+      inFlightRef.current += 1;
+      setLoading(true);
+      try {
+        setError(null);
+        const nextPage = await fetchPuzzleList(
+          {page: currentPage, pageSize, filter: props.filter},
+          accessToken
+        );
+        // A filter change while this request was in flight means the answer
+        // belongs to a list nobody is looking at any more.
+        if (generation !== generationRef.current) return;
+        if (reload) {
+          setPuzzles(nextPage.puzzles);
+          setLoadedFilterKey(filterKey);
+        } else {
           setPuzzles([...currentPuzzles, ...nextPage.puzzles]);
-          setPage(currentPage + 1);
-          setFullyLoaded(_.size(nextPage.puzzles) < pageSize);
-        } catch (err) {
-          Sentry.captureException(err);
-          setError(
-            import.meta.env.VITE_MAINTENANCE_MESSAGE ||
-              'Cross with Friends backend is currently unavailable. Please try again later.'
-          );
-        } finally {
-          setLoading(false);
         }
-      },
-      500,
-      {trailing: true}
-    ),
-    [loading, JSON.stringify(props.filter), accessToken]
-  );
-  useEffect(() => {
-    // it is debatable if we want to blank out the current puzzles here or not,
-    // for now we only change the puzzles when the reload happens.
-    fetchMore([], 0);
+        setPage(currentPage + 1);
+        setFullyLoaded(_.size(nextPage.puzzles) < pageSize);
+      } catch (err) {
+        Sentry.captureException(err);
+        setError(
+          import.meta.env.VITE_MAINTENANCE_MESSAGE ||
+            'Cross with Friends backend is currently unavailable. Please try again later.'
+        );
+      } finally {
+        inFlightRef.current -= 1;
+        if (inFlightRef.current === 0) {
+          setLoading(false);
+          reloadKeyRef.current = null;
+        }
+      }
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(props.filter), props.uploadedPuzzles, !!accessToken]);
+    [filterKey, accessToken]
+  );
+
+  // Scroll and auto-fill appends are throttled, but the reload that follows a
+  // filter change deliberately is not: going through the throttle is what used
+  // to make a filter change get swallowed while another page was loading.
+  const fetchMore = React.useMemo(() => _.throttle(performFetch, 500, {trailing: true}), [performFetch]);
+
+  useEffect(() => {
+    generationRef.current += 1;
+    autoFillPagesRef.current = 0;
+    // Force the effect below to load the list again: the filter changed, or the
+    // signed-in account did, which can change which puzzles are visible.
+    setPendingFilterKey(filterKey);
+    setLoadedFilterKey(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterKey, props.uploadedPuzzles, !!accessToken]);
+
+  // Loading the first page of the current filter is separate from the effect
+  // above so that a filter change made while a request is still in flight is
+  // retried once the list is idle instead of being silently dropped.
+  useEffect(() => {
+    if (pendingFilterKey === loadedFilterKey) return;
+    performFetch([], 0, {reload: true});
+  }, [pendingFilterKey, loadedFilterKey, performFetch]);
 
   const handleScroll = useCallback(async () => {
     if (fullyLoaded) return;
@@ -170,13 +224,15 @@ const NewPuzzleList: React.FC<NewPuzzleListProps> = (props) => {
     }
   }, [fullyLoaded, fullyScrolled, fetchMore, puzzles, page]);
   const handleRetry = useCallback(() => {
-    fetchMore([], 0);
-  }, [fetchMore]);
+    reloadKeyRef.current = null;
+    performFetch([], 0, {reload: true});
+  }, [performFetch]);
   const handleTouchEnd = useCallback(async () => {
     if (containerRef.current) return;
     await handleScroll();
   }, [handleScroll]);
 
+  const selectedSources = normalizeSourceFilter(props.filter?.sourceFilter);
   const puzzleData: {
     entryProps: EntryProps;
   }[] = puzzles
@@ -209,7 +265,24 @@ const NewPuzzleList: React.FC<NewPuzzleListProps> = (props) => {
         started: 'In progress' as const,
       }[data.entryProps.status];
       return props.statusFilter[mappedStatus];
-    });
+    })
+    // Journal filtering is also applied here, not only on the server, so the
+    // list stays correct against a backend that predates the sourceFilter
+    // query param. When the server does honor it this is a no-op.
+    .filter(
+      (data) => selectedSources.length === 0 || selectedSources.includes(data.entryProps.source as string)
+    );
+
+  // Pull further pages while the filtered list would otherwise look empty.
+  useEffect(() => {
+    if (fullyLoaded || loading) return;
+    if (puzzles.length === 0) return; // the reload effect owns the first page
+    if (puzzleData.length >= MIN_VISIBLE_ENTRIES) return;
+    if (autoFillPagesRef.current >= AUTO_FILL_MAX_PAGES) return;
+    autoFillPagesRef.current += 1;
+    fetchMore(puzzles, page);
+  }, [puzzleData.length, fullyLoaded, loading, puzzles, page, fetchMore]);
+
   return (
     <div
       ref={containerRef}

@@ -24,10 +24,25 @@ import Upload from '../components/Upload';
 import PuzzleList from '../components/PuzzleList';
 import {WelcomeVariantsControl} from '../components/WelcomeVariantsControl';
 import {isMobile, colorAverage} from '../lib/jsUtils';
-import {PUZZLE_SOURCES, SOURCE_GROUPS, normalizeSourceFilter} from '../shared/puzzle_source';
+import {PUZZLE_SOURCES, SOURCE_GROUPS, getPuzzleSource, normalizeSourceFilter} from '../shared/puzzle_source';
 
 const BLUE = '#6aa9f4';
 const WHITE = '#FFFFFF';
+
+const FILTERS_COLLAPSED_KEY = 'cwf:filtersCollapsed';
+
+// The collapsed state is remembered per device: someone who folds the filters
+// away on a phone does not want them expanded again on every visit.
+const readFiltersCollapsed = (fallback) => {
+  try {
+    const stored = localStorage.getItem(FILTERS_COLLAPSED_KEY);
+    if (stored === '1') return true;
+    if (stored === '0') return false;
+  } catch {
+    // ignore (private mode, disabled storage)
+  }
+  return fallback;
+};
 
 const SIZE_NAMES = ['Mini', 'Midi', 'Standard', 'Large'];
 
@@ -60,13 +75,16 @@ const TRAY_SOURCES = PUZZLE_SOURCES.filter((source) => !source.primary);
 export default class Welcome extends Component {
   constructor(props) {
     super(props);
+    this.mobile = isMobile();
     this.state = {
       collapsedFilters: {},
       mobileSidebarOpen: false,
       uploadedPuzzles: 0,
+      // A phone starts folded so the puzzles are the first thing in view;
+      // desktop starts open because there is room for the controls.
+      filtersCollapsed: readFiltersCollapsed(this.mobile),
     };
     this.loading = false;
-    this.mobile = isMobile();
     this.searchInput = React.createRef();
     this.nav = React.createRef();
     // Initialize to 0 so the navStyle/navTextStyle/navLinkStyle getters
@@ -324,6 +342,43 @@ export default class Welcome extends Component {
     );
   }
 
+  // A one-line description of whatever the folded panel is hiding, so a
+  // collapsed filter bar still says which slice of the archive is on screen.
+  get filtersSummary() {
+    const parts = [];
+
+    const selected = this.selectedSources;
+    if (selected.length === 1) {
+      const [id] = selected;
+      parts.push(getPuzzleSource(id)?.label || id);
+    } else if (selected.length > 1) {
+      parts.push(`${selected.length} journals`);
+    }
+
+    const sizeFilter = this.props.sizeFilter || {};
+    const activeSizes = SIZE_NAMES.filter((name) => sizeFilter[name]);
+    if (activeSizes.length > 0 && activeSizes.length < SIZE_NAMES.length) {
+      parts.push(activeSizes.length === 1 ? activeSizes[0] : `${activeSizes.length} sizes`);
+    }
+
+    const typeFilter = this.props.typeFilter || {};
+    const activeTypes = Object.keys(ALL_TYPES).filter((name) => typeFilter[name]);
+    if (activeTypes.length > 0 && activeTypes.length < Object.keys(ALL_TYPES).length) {
+      parts.push(activeTypes.join(', '));
+    }
+
+    const dayOfWeekFilter = this.props.dayOfWeekFilter || {};
+    const activeDays = Object.keys(ALL_DAYS).filter((name) => dayOfWeekFilter[name]);
+    if (activeDays.length > 0 && activeDays.length < Object.keys(ALL_DAYS).length) {
+      parts.push(activeDays.length === 1 ? activeDays[0] : `${activeDays.length} days`);
+    }
+
+    const minRating = this.props.minRating || 0;
+    if (minRating > 0) parts.push(`${minRating}+ stars`);
+
+    return parts.length > 0 ? parts.join(' · ') : 'All puzzles';
+  }
+
   // Source chips are a multi-select: clicking a journal adds it to the list,
   // clicking it again removes it. An empty list means "all journals".
   handleToggleSource = (e) => {
@@ -358,6 +413,16 @@ export default class Welcome extends Component {
     this.props.setTypeFilter({...ALL_TYPES});
     this.props.setDayOfWeekFilter({...ALL_DAYS});
     this.props.setMinRating(0);
+  };
+
+  handleToggleFilters = () => {
+    const filtersCollapsed = !this.state.filtersCollapsed;
+    this.setState({filtersCollapsed});
+    try {
+      localStorage.setItem(FILTERS_COLLAPSED_KEY, filtersCollapsed ? '1' : '0');
+    } catch {
+      // ignore
+    }
   };
 
   renderFilters() {
@@ -626,22 +691,48 @@ export default class Welcome extends Component {
   }
 
   renderHero() {
+    const collapsed = this.state.filtersCollapsed;
     return (
       <div className="welcome--hero">
         <div className="flex welcome--hero-top">
           <div className="flex--column welcome--hero-heading">
             <h1 className="welcome--hero-title">Find your next crossword</h1>
-            <p className="welcome--hero-subtitle">Every journal in one place — pick a source, then a size.</p>
+            {!collapsed && (
+              <p className="welcome--hero-subtitle">
+                Every journal in one place — pick a source, then a size.
+              </p>
+            )}
           </div>
           {this.renderViewToggle()}
         </div>
-        {this.renderSourceRail()}
-        {this.renderSizeControl()}
-        {this.hasActiveFilters && (
-          <button type="button" className="welcome--clear-filters" onClick={this.handleClearFilters}>
-            <MdClose className="welcome--clear-filters-icon" />
-            Clear all filters
+        <div className="flex flex--align-center welcome--filters-bar">
+          <button
+            type="button"
+            className={clsx('welcome--filters-toggle', {active: !collapsed})}
+            aria-expanded={!collapsed}
+            onClick={this.handleToggleFilters}
+          >
+            <MdFilterList className="welcome--filters-toggle-icon" />
+            Filters
+            <span className="welcome--filters-summary">{this.filtersSummary}</span>
+            {collapsed ? (
+              <MdExpandMore className="welcome--filters-toggle-icon" />
+            ) : (
+              <MdExpandLess className="welcome--filters-toggle-icon" />
+            )}
           </button>
+          {this.hasActiveFilters && (
+            <button type="button" className="welcome--clear-filters" onClick={this.handleClearFilters}>
+              <MdClose className="welcome--clear-filters-icon" />
+              Clear all filters
+            </button>
+          )}
+        </div>
+        {!collapsed && (
+          <div className="welcome--filters-body">
+            {this.renderSourceRail()}
+            {this.renderSizeControl()}
+          </div>
         )}
       </div>
     );

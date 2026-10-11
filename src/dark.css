@@ -443,6 +443,22 @@
   color: #8bc4ff;
 }
 
+.dark .welcome--filters-toggle {
+  border-color: rgb(255 255 255 / 18%);
+  background-color: rgb(255 255 255 / 6%);
+  color: var(--dark-primary-text);
+}
+
+.dark .welcome--filters-toggle:hover,
+.dark .welcome--filters-toggle.active {
+  border-color: #6aa9f4;
+  color: #8bc4ff;
+}
+
+.dark .welcome--filters-summary {
+  color: rgb(255 255 255 / 55%);
+}
+
 .dark .welcome--more-toggle {
   color: #8bc4ff;
 }
