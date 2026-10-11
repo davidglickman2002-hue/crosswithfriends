@@ -111,6 +111,13 @@
   align-items: center;
 }
 
+/* The name tag can be longer than the other menu labels. */
+.nav--user-menu--item-label {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .nav--user-menu--divider {
   border-top: 1px solid #eee;
   margin: 4px 0;

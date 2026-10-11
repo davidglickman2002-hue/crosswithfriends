@@ -4,12 +4,14 @@ import {Link} from 'react-router';
 import {useCallback, useContext, useEffect, useRef, useState} from 'react';
 
 import clsx from 'clsx';
-import {FaSun, FaMoon, FaDesktop, FaUserCircle, FaVolumeUp, FaVolumeMute} from 'react-icons/fa';
+import {FaSun, FaMoon, FaDesktop, FaUserCircle, FaTag, FaVolumeUp, FaVolumeMute} from 'react-icons/fa';
 import {MdInfoOutline} from 'react-icons/md';
 import GlobalContext from '../../lib/GlobalContext';
 import AuthContext from '../../lib/AuthContext';
+import {getStoredDisplayName, setDisplayName, subscribeToDisplayNameChange} from '../../lib/displayName';
 import LoginModal from '../Auth/LoginModal';
 import InfoDialog from './InfoDialog';
+import DisplayNameDialog from './DisplayNameDialog';
 import SupportOptions, {SupportHeartIcon} from './SupportOptions';
 
 function darkModeIcon(darkModePreference) {
@@ -32,7 +34,13 @@ function UserMenu() {
   const [showLogin, setShowLogin] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showSupport, setShowSupport] = useState(false);
+  const [showNameTag, setShowNameTag] = useState(false);
+  const [nameTag, setNameTag] = useState(() => getStoredDisplayName() || '');
   const menuRef = useRef(null);
+
+  // Keep the menu label in step with the name, whoever changed it (this menu,
+  // a rename inside a game, or another tab of the same device).
+  useEffect(() => subscribeToDisplayNameChange(setNameTag), []);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -70,6 +78,16 @@ function UserMenu() {
   const handleShowSupport = useCallback(() => {
     setOpen(false);
     setShowSupport(true);
+  }, []);
+
+  const handleShowNameTag = useCallback(() => {
+    setOpen(false);
+    setNameTag(getStoredDisplayName() || '');
+    setShowNameTag(true);
+  }, []);
+
+  const handleSaveNameTag = useCallback((displayName) => {
+    setDisplayName(displayName);
   }, []);
 
   const handleLogoutClick = useCallback(() => {
@@ -147,6 +165,20 @@ function UserMenu() {
             className="nav--user-menu--item"
             role="button"
             tabIndex={0}
+            onClick={handleShowNameTag}
+            onKeyDown={handleButtonKeyDown(handleShowNameTag)}
+          >
+            <span className="nav--user-menu--item-icon">
+              <FaTag />
+            </span>
+            <span className="nav--user-menu--item-label">
+              {nameTag ? `Name tag: ${nameTag}` : 'Set name tag'}
+            </span>
+          </div>
+          <div
+            className="nav--user-menu--item"
+            role="button"
+            tabIndex={0}
             onClick={toggleMolesterMoons}
             onKeyDown={handleToggleDarkMode}
           >
@@ -203,6 +235,12 @@ function UserMenu() {
         </div>
       )}
       <LoginModal open={showLogin} onClose={handleCloseLogin} />
+      <DisplayNameDialog
+        open={showNameTag}
+        onOpenChange={setShowNameTag}
+        initialName={nameTag}
+        onSave={handleSaveNameTag}
+      />
       <InfoDialog
         open={showAbout}
         onOpenChange={setShowAbout}

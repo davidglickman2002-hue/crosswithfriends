@@ -9,6 +9,7 @@ import * as Sentry from '@sentry/react';
 import Emoji from '../common/Emoji';
 import * as emojiLib from '../../lib/emoji';
 import nameGenerator, {isFromNameGenerator} from '../../lib/nameGenerator';
+import {subscribeToDisplayNameChange} from '../../lib/displayName';
 import ChatBar from './ChatBar';
 import EditableSpan from '../common/EditableSpan';
 import ColorPicker from './ColorPicker.tsx';
@@ -138,6 +139,11 @@ export default class Chat extends Component {
     this.setState({username});
     this.handleUpdateDisplayName(username);
 
+    // The name tag lives in the account menu (and in localStorage), so a change
+    // made there — or in another tab — has to reach this game immediately
+    // instead of waiting for a reload.
+    this.unsubscribeDisplayName = subscribeToDisplayNameChange(this.handleDisplayNameChange);
+
     // Zen mode hides spoilers per-puzzle, lifetime — not per-game-instance —
     // so a fresh game on a puzzle you've already solved elsewhere shouldn't
     // re-hide stats. Only authenticated users can have zen mode active (see
@@ -152,6 +158,7 @@ export default class Chat extends Component {
 
   componentWillUnmount() {
     clearTimeout(this.copyPuzzleIdTimeout);
+    if (this.unsubscribeDisplayName) this.unsubscribeDisplayName();
   }
 
   static get usernameKey() {
@@ -182,6 +189,11 @@ export default class Chat extends Component {
     ) {
       localStorage.setItem('username_default', displayName);
     }
+  };
+
+  handleDisplayNameChange = (displayName) => {
+    if (!displayName) return;
+    this.handleUpdateDisplayName(displayName);
   };
 
   handleUpdateColor = (color) => {

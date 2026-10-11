@@ -1,0 +1,81 @@
+/* DisplayNameDialog — the persistent name tag editor (Radix Dialog).
+   Panel/overlay/title/actions come from confirmDialog.css. */
+
+.name-tag-dialog--description {
+  margin: 0 0 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgb(0 0 0 / 60%);
+}
+
+.name-tag-dialog--field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  background-color: #fff;
+  border: 1px solid rgb(0 0 0 / 18%);
+  border-radius: 8px;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+
+.name-tag-dialog--field:focus-within {
+  border-color: var(--main-blue);
+  box-shadow: 0 0 0 3px rgb(106 169 244 / 18%);
+}
+
+.name-tag-dialog--field-icon {
+  flex-shrink: 0;
+  color: rgb(0 0 0 / 35%);
+}
+
+.name-tag-dialog--input {
+  flex-grow: 1;
+  min-width: 0;
+  padding: 9px 0;
+  font-family: inherit;
+  font-size: 15px;
+  color: rgb(0 0 0 / 87%);
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+.name-tag-dialog--hint {
+  margin: 6px 0 18px;
+  font-size: 11px;
+  color: rgb(0 0 0 / 45%);
+  text-align: right;
+}
+
+.dark .name-tag-dialog--description {
+  color: rgb(255 255 255 / 60%);
+}
+
+.dark .name-tag-dialog--field {
+  background-color: rgb(255 255 255 / 6%);
+  border-color: rgb(255 255 255 / 22%);
+}
+
+.dark .name-tag-dialog--field:focus-within {
+  border-color: #6aa9f4;
+  box-shadow: 0 0 0 3px rgb(106 169 244 / 22%);
+}
+
+.dark .name-tag-dialog--field-icon {
+  color: rgb(255 255 255 / 40%);
+}
+
+.dark .name-tag-dialog--input {
+  color: var(--dark-primary-text);
+}
+
+.dark .name-tag-dialog--input::placeholder {
+  color: rgb(255 255 255 / 35%);
+}
+
+.dark .name-tag-dialog--hint {
+  color: rgb(255 255 255 / 40%);
+}
