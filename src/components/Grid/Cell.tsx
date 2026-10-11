@@ -6,7 +6,8 @@ import {FaNoteSticky} from 'react-icons/fa6';
 import {Ping, CellStyles, OtherSelection, ChatBubble} from './types';
 import './css/cell.css';
 import {CellData, Cursor} from '../../shared/types';
-import {getTranslucentColor, getContrastTextColor} from '../../lib/colors';
+import {getContrastTextColor} from '../../lib/colors';
+import {getSelectionWashStyle, SELECTED_OVERLAP_OPACITY, SHARED_SELECTION_OPACITY} from './selectionWash';
 
 export interface EnhancedCellData extends CellData {
   r: number;
@@ -69,31 +70,31 @@ export default class Cell extends React.Component<Props> {
 
   renderOtherSelection() {
     const {otherSelections, selected} = this.props;
-    if (!otherSelections || otherSelections.length === 0 || selected) {
+    const others = otherSelections || [];
+    if (others.length === 0) {
       return null;
     }
 
-    const count = otherSelections.length;
-    let style: React.CSSProperties;
-    const names = otherSelections.map((s) => s.displayName || 'Player').join(', ');
-
-    if (count === 1) {
-      const tint = getTranslucentColor(otherSelections[0].color, 0.22);
-      style = {backgroundColor: tint};
-    } else {
-      const step = 100 / count;
-      const stops = otherSelections
-        .map((sel, idx) => {
-          const tint = getTranslucentColor(sel.color, 0.22);
-          const start = (idx * step).toFixed(1);
-          const end = ((idx + 1) * step).toFixed(1);
-          return `${tint} ${start}%, ${tint} ${end}%`;
-        })
-        .join(', ');
-      style = {backgroundImage: `linear-gradient(135deg, ${stops})`};
+    // When the local player is on the square too, their selected fill would
+    // otherwise hide everyone else completely, so the square is striped
+    // instead. The local band is left unpainted and shows that fill through.
+    const colors = selected ? [null, ...others.map((sel) => sel.color)] : others.map((sel) => sel.color);
+    const style = getSelectionWashStyle(
+      colors,
+      selected ? SELECTED_OVERLAP_OPACITY : SHARED_SELECTION_OPACITY
+    );
+    if (!style) {
+      return null;
     }
 
-    return <div className="cell--other-selection" style={style} title={`Selected by ${names}`} />;
+    const names = others.map((sel) => sel.displayName || 'Player').join(', ');
+    return (
+      <div
+        className="cell--other-selection"
+        style={style}
+        title={selected ? `Also selected by ${names}` : `Selected by ${names}`}
+      />
+    );
   }
 
   renderCursorBadges() {

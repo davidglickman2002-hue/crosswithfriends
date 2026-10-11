@@ -6,6 +6,7 @@ import Cell from '../Cell';
 import GridWrapper from '../../../lib/wrappers/GridWrapper';
 import {getTranslucentColor, getContrastTextColor} from '../../../lib/colors';
 import {OtherSelection} from '../types';
+import {getSelectionWashStyle, SELECTED_OVERLAP_OPACITY, SHARED_SELECTION_OPACITY} from '../selectionWash';
 
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -282,7 +283,7 @@ describe('Cell component otherSelections and badges rendering', () => {
     expect(cursorOutlines[1].getAttribute('style')).toContain('inset: 2px');
   });
 
-  it('does not render other-selection wash when cell is selected by local player', async () => {
+  it('no longer treats a cell selected by the local player as clear of other selections', async () => {
     const otherSelections: OtherSelection[] = [
       {
         id: 'p1',
@@ -295,6 +296,89 @@ describe('Cell component otherSelections and badges rendering', () => {
 
     await renderComponent(<Cell {...baseProps} selected={true} otherSelections={otherSelections} />);
     const wash = container.querySelector('.cell--other-selection');
-    expect(wash).toBeNull();
+    expect(wash).not.toBeNull();
+  });
+
+  it('stripes an overlapping selection instead of hiding it under the local fill', async () => {
+    const otherSelections: OtherSelection[] = [
+      {
+        id: 'p1',
+        color: 'hsl(207,90%,54%)',
+        displayName: 'Alice',
+        direction: 'across',
+        isActiveSquare: false,
+      },
+    ];
+
+    await renderComponent(<Cell {...baseProps} selected={true} otherSelections={otherSelections} />);
+    const wash = container.querySelector('.cell--other-selection');
+    expect(wash).not.toBeNull();
+
+    // Diagonal bands: the local player's own band is unpainted (their selected
+    // fill already is that colour), and the other player is laid over it.
+    const style = wash?.getAttribute('style') || '';
+    expect(style).toContain('linear-gradient(135deg');
+    expect(style).toContain('transparent 0.0%');
+    expect(style).toContain(`${SELECTED_OVERLAP_OPACITY})`);
+    expect(style).not.toContain(`${SHARED_SELECTION_OPACITY})`);
+    expect(wash?.getAttribute('title')).toBe('Also selected by Alice');
+  });
+
+  it('gives every overlapping player a band when the local player shares the square', async () => {
+    const otherSelections: OtherSelection[] = [
+      {
+        id: 'p1',
+        color: 'hsl(207,90%,54%)',
+        displayName: 'Alice',
+        direction: 'across',
+        isActiveSquare: false,
+      },
+      {
+        id: 'p2',
+        color: 'hsl(4,90%,58%)',
+        displayName: 'Bob',
+        direction: 'down',
+        isActiveSquare: false,
+      },
+    ];
+
+    await renderComponent(<Cell {...baseProps} selected={true} otherSelections={otherSelections} />);
+    const style = container.querySelector('.cell--other-selection')?.getAttribute('style') || '';
+    expect(style).toContain('linear-gradient(135deg');
+    expect(style).toContain('transparent 0.0%, transparent 33.3%');
+    // Two other players plus the local band: a third of the square each.
+    expect(style).toContain(`${SELECTED_OVERLAP_OPACITY}) 33.3%`);
+    expect(style).toContain(`${SELECTED_OVERLAP_OPACITY}) 66.7%`);
+    expect(style).toContain('100.0%');
+  });
+
+  it('leaves a solo selected cell unstriped', async () => {
+    await renderComponent(<Cell {...baseProps} selected={true} otherSelections={[]} />);
+    expect(container.querySelector('.cell--other-selection')).toBeNull();
+  });
+});
+
+describe('getSelectionWashStyle', () => {
+  it('returns nothing for an empty player list', () => {
+    expect(getSelectionWashStyle([], SELECTED_OVERLAP_OPACITY)).toBeNull();
+  });
+
+  it('paints a flat wash for a single colour', () => {
+    expect(getSelectionWashStyle(['#3b82f6'], SHARED_SELECTION_OPACITY)).toEqual({
+      backgroundColor: 'rgba(59, 130, 246, 0.22)',
+    });
+  });
+
+  it('skips a null band so the square below shows through', () => {
+    const style = getSelectionWashStyle([null, '#ef4444'], SELECTED_OVERLAP_OPACITY);
+    expect(style?.backgroundImage).toContain('transparent 0.0%, transparent 50.0%');
+    expect(style?.backgroundImage).toContain(`rgba(239, 68, 68, ${SELECTED_OVERLAP_OPACITY}) 50.0%`);
+  });
+
+  it('splits the square evenly between every colour', () => {
+    const style = getSelectionWashStyle(['#111111', '#222222', '#333333'], SELECTED_OVERLAP_OPACITY);
+    expect(style?.backgroundImage).toContain('33.3%');
+    expect(style?.backgroundImage).toContain('66.7%');
+    expect(style?.backgroundImage).toContain('100.0%');
   });
 });
