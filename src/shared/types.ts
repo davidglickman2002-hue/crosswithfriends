@@ -152,6 +152,10 @@ export interface ListPuzzleRequestFilters {
     Sun: boolean;
     Unknown: boolean;
   };
+  // Publication filter, matched against title/copyright text (see
+  // shared/puzzle_source.ts). Comma-separated source ids; empty or 'all'
+  // means no restriction.
+  sourceFilter?: string;
   // 0 = no filter; 1-5 = puzzles with average rating >= that value
   minRating?: number;
   // Default ranking is pid_numeric DESC; rating sorts use a weighted mean

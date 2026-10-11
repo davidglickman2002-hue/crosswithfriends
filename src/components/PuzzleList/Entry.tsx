@@ -4,6 +4,7 @@ import {MdRadioButtonUnchecked, MdCheckCircle, MdStar, MdAccessTime, MdVisibilit
 import {GiCrossedSwords} from 'react-icons/gi';
 import {Link} from 'react-router';
 import {formatMilliseconds} from '../Toolbar/Clock';
+import {getPuzzleSource, OTHER_SOURCE_ID} from '../../shared/puzzle_source';
 
 export interface EntryProps {
   info: {
@@ -27,6 +28,7 @@ export interface EntryProps {
   fencing?: boolean;
   isPublic?: boolean;
   contest?: boolean;
+  source?: string;
   zenMode?: boolean;
 }
 
@@ -78,9 +80,11 @@ export default class Entry extends Component<EntryProps> {
   }
 
   render() {
-    const {title, author, originalTitle, originalAuthor, pid, status, stats, fencing, isPublic} = this.props;
+    const {title, author, originalTitle, originalAuthor, pid, status, stats, fencing, isPublic, source} =
+      this.props;
     // Zen mode: hide spoilers (median time, rating) until this puzzle is solved.
     const showStats = !this.props.zenMode || status === 'solved';
+    const sourceDef = source && source !== OTHER_SOURCE_ID ? getPuzzleSource(source) : undefined;
     const numSolvesOld = _.size(stats?.solves || []);
     const numSolves = numSolvesOld + (stats?.numSolves || 0);
     const displayName = _.compact([this.size, author.trim()]).join(' | ');
@@ -97,6 +101,11 @@ export default class Entry extends Component<EntryProps> {
         <div className="flex--column entry" onClick={handleClick} onMouseLeave={handleMouseLeave}>
           <div className="flex entry--top--left">
             <div className="flex--column entry--title-block">
+              {sourceDef && (
+                <span className="entry--source" title={sourceDef.fullName}>
+                  {sourceDef.label}
+                </span>
+              )}
               <p className="entry--title" title={title}>
                 {title}
               </p>

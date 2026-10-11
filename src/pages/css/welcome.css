@@ -40,10 +40,19 @@
 
 .welcome--searchbar {
   font-size: 16px;
-  padding: 10px 5px 10px 40px;
+  padding: 11px 16px 11px 44px;
   width: 100%;
-  border-radius: 3px;
-  border: 1px solid silver;
+  border-radius: 999px;
+  border: 1px solid rgb(0 0 0 / 14%);
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+
+.welcome--searchbar:focus {
+  outline: none;
+  border-color: var(--main-blue);
+  box-shadow: 0 0 0 4px rgb(106 169 244 / 18%);
 }
 
 .welcome--searchbar--wrapper {
@@ -276,15 +285,6 @@
   line-height: 1;
 }
 
-.welcome--sort-select {
-  margin-top: 6px;
-  padding: 4px 6px;
-  font-size: 13px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
-  background: white;
-}
-
 .welcome--min-rating {
   display: flex;
   align-items: center;
@@ -407,4 +407,286 @@ p {
 
 .mobile-sidebar .quickplay {
   border-top: 2px solid var(--main-blue);
+}
+
+/* Hero: publication, size and sort are the first decisions a solver makes. */
+.welcome--hero {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 22px 25px;
+  border-bottom: 2px solid var(--main-blue);
+  background: linear-gradient(180deg, rgb(106 169 244 / 9%), rgb(106 169 244 / 0%) 75%);
+}
+
+.welcome--hero-top {
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.welcome--hero-heading {
+  gap: 4px;
+  min-width: 0;
+}
+
+.welcome--hero-title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: rgb(0 0 0 / 88%);
+}
+
+.welcome--hero-subtitle {
+  font-size: 14px;
+  color: rgb(0 0 0 / 55%);
+}
+
+.welcome--rail-wrap,
+.welcome--control-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.welcome--control-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(0 0 0 / 45%);
+}
+
+.welcome--rail {
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.welcome--chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1px solid rgb(0 0 0 / 12%);
+  border-radius: 999px;
+  background-color: #fff;
+  color: rgb(0 0 0 / 72%);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s,
+    color 0.15s,
+    box-shadow 0.15s;
+}
+
+.welcome--chip:hover {
+  border-color: var(--main-blue);
+  color: var(--main-blue);
+}
+
+.welcome--chip.active {
+  background-color: var(--main-blue);
+  border-color: var(--main-blue);
+  color: #fff;
+  box-shadow: 0 2px 8px rgb(106 169 244 / 35%);
+}
+
+.welcome--chip-icon {
+  width: 15px;
+  height: 15px;
+}
+
+/* Long-tail journals stay collapsed so the rail is one readable row. The
+   disclosure is a native <details>, so it needs its marker suppressed. */
+.welcome--more {
+  margin-top: 2px;
+}
+
+.welcome--more-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  color: var(--main-blue);
+  font-size: 12px;
+  font-weight: 600;
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+.welcome--more-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.welcome--more-toggle::after {
+  width: 0;
+  height: 0;
+  border-right: 4px solid transparent;
+  border-left: 4px solid transparent;
+  border-top: 5px solid currentcolor;
+  content: '';
+  transition: transform 0.15s;
+}
+
+.welcome--more[open] .welcome--more-toggle::after {
+  transform: rotate(180deg);
+}
+
+.welcome--more-count {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background-color: rgb(106 169 244 / 16%);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.welcome--more-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* One short labelled row per publication group, so the long tail reads as a
+   handful of sections rather than a wall of ~20 chips. */
+.welcome--group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.welcome--group-label {
+  color: rgb(0 0 0 / 45%);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.welcome--rail--tray {
+  margin-top: 4px;
+}
+
+.welcome--segmented {
+  display: inline-flex;
+  align-self: flex-start;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid rgb(0 0 0 / 10%);
+  border-radius: 999px;
+  background-color: rgb(0 0 0 / 4%);
+}
+
+.welcome--segmented-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  color: rgb(0 0 0 / 65%);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    color 0.15s,
+    box-shadow 0.15s;
+}
+
+.welcome--segmented-option:hover {
+  color: var(--main-blue);
+}
+
+.welcome--segmented-option.active {
+  background-color: #fff;
+  color: var(--main-blue);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 16%);
+}
+
+.welcome--segmented-icon {
+  width: 15px;
+  height: 15px;
+}
+
+.welcome--segmented--view {
+  flex-shrink: 0;
+}
+
+.welcome--clear-filters {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  padding: 7px 14px;
+  border: 1px dashed rgb(0 0 0 / 25%);
+  border-radius: 999px;
+  background: none;
+  color: rgb(0 0 0 / 60%);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+
+.welcome--clear-filters:hover {
+  border-color: var(--main-blue);
+  color: var(--main-blue);
+}
+
+.welcome--clear-filters-icon {
+  width: 15px;
+  height: 15px;
+}
+
+/* Publication badge on each puzzle card. */
+.entry--source {
+  align-self: flex-start;
+  margin-bottom: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background-color: rgb(106 169 244 / 14%);
+  color: #2f6fb5;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.welcome.mobile .welcome--hero {
+  gap: 12px;
+  padding: 16px;
+}
+
+.welcome.mobile .welcome--hero-title {
+  font-size: 20px;
+}
+
+.welcome.mobile .welcome--hero-subtitle {
+  display: none;
+}
+
+/* The journal rail scrolls sideways instead of wrapping on small screens. */
+.welcome.mobile .welcome--rail {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+
+.welcome.mobile .welcome--rail::-webkit-scrollbar {
+  display: none;
 }

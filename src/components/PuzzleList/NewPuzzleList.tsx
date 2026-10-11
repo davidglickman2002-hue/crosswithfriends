@@ -9,6 +9,7 @@ import getLocalId from '../../localAuth';
 import AuthContext from '../../lib/AuthContext';
 import './css/puzzleList.css';
 import Entry, {EntryProps} from './Entry';
+import {classifyPuzzleSource} from '../../shared/puzzle_source';
 
 interface PuzzleStatuses {
   [pid: string]: 'solved' | 'started';
@@ -195,6 +196,7 @@ const NewPuzzleList: React.FC<NewPuzzleListProps> = (props) => {
         fencing: props.fencing,
         isPublic: puzzle.isPublic,
         contest: puzzle.content.contest,
+        source: classifyPuzzleSource(puzzle.content.info),
         // Zen mode is account-only — a guest must not inherit a stale
         // localStorage flag left over from a previous logged-in session.
         zenMode: !!user && preferences?.zenMode,
@@ -250,6 +252,7 @@ const NewPuzzleList: React.FC<NewPuzzleListProps> = (props) => {
             fencing={entryProps.fencing}
             isPublic={entryProps.isPublic}
             contest={entryProps.contest}
+            source={entryProps.source}
             zenMode={entryProps.zenMode}
           />
         </div>

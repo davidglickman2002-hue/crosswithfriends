@@ -350,6 +350,100 @@
   border-bottom-color: var(--dark-blue-1);
 }
 
+.dark .welcome--searchbar {
+  border-color: rgb(255 255 255 / 22%);
+  background-color: rgb(255 255 255 / 6%);
+  color: var(--dark-primary-text);
+}
+
+.dark .welcome--searchbar:focus {
+  border-color: #6aa9f4;
+  box-shadow: 0 0 0 4px rgb(106 169 244 / 22%);
+}
+
+.dark .welcome--searchbar--container {
+  border-bottom-color: #555;
+}
+
+.dark .welcome--hero {
+  border-bottom-color: #555;
+  background: linear-gradient(180deg, rgb(106 169 244 / 12%), rgb(106 169 244 / 0%) 75%);
+}
+
+.dark .welcome--hero-title {
+  color: var(--dark-primary-text);
+}
+
+.dark .welcome--hero-subtitle,
+.dark .welcome--control-label {
+  color: rgb(255 255 255 / 50%);
+}
+
+.dark .welcome--chip {
+  border-color: rgb(255 255 255 / 22%);
+  background-color: var(--dark-background-1);
+  color: var(--dark-primary-text);
+}
+
+.dark .welcome--chip:hover {
+  border-color: #6aa9f4;
+  color: #8bc4ff;
+}
+
+.dark .welcome--chip.active {
+  background-color: #2f6fb5;
+  border-color: #2f6fb5;
+  color: #fff;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 40%);
+}
+
+.dark .welcome--segmented {
+  border-color: rgb(255 255 255 / 14%);
+  background-color: rgb(255 255 255 / 6%);
+}
+
+.dark .welcome--segmented-option {
+  color: rgb(255 255 255 / 65%);
+}
+
+.dark .welcome--segmented-option:hover {
+  color: #8bc4ff;
+}
+
+.dark .welcome--segmented-option.active {
+  background-color: var(--dark-background-2);
+  color: #8bc4ff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 50%);
+}
+
+.dark .welcome--clear-filters {
+  border-color: rgb(255 255 255 / 28%);
+  color: rgb(255 255 255 / 60%);
+}
+
+.dark .welcome--clear-filters:hover {
+  border-color: #6aa9f4;
+  color: #8bc4ff;
+}
+
+.dark .entry--source {
+  background-color: rgb(106 169 244 / 22%);
+  color: #8bc4ff;
+}
+
+.dark .welcome--more-toggle {
+  color: #8bc4ff;
+}
+
+.dark .welcome--more-count {
+  background-color: rgb(106 169 244 / 24%);
+  color: rgb(255 255 255 / 78%);
+}
+
+.dark .welcome--group-label {
+  color: rgb(255 255 255 / 50%);
+}
+
 .dark .entry {
   color: var(--dark-primary-text);
   background-color: var(--dark-background-1);
@@ -587,12 +681,6 @@
   color: rgb(255 255 255 / 60%);
 }
 
-.dark .welcome--sort-select {
-  background: #2a2a2a;
-  color: rgb(255 255 255 / 87%);
-  border-color: #444;
-}
-
 .dark .welcome--min-rating-label {
   color: rgb(255 255 255 / 60%);
 }
@@ -605,11 +693,6 @@
 
 .dark .file-uploader--box {
   color: var(--dark-primary-text);
-}
-
-/* Welcome Page (additional) */
-.dark .welcome--searchbar {
-  border-color: #555;
 }
 
 .dark input::placeholder {

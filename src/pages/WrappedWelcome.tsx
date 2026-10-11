@@ -1,6 +1,7 @@
 import {useEffect} from 'react';
 import useStateParams from '../lib/hooks/useStateParams';
 import {PuzzleSortBy} from '../shared/types';
+import {normalizeSourceFilter} from '../shared/puzzle_source';
 import Welcome from './Welcome';
 
 interface UseFencing {
@@ -104,6 +105,17 @@ const WrappedWelcome = (props: UseFencing) => {
     (s) => s
   );
 
+  // Source (publication) filter. Stored as a comma-separated list of source ids
+  // so the URL stays readable (?source=nyt,la_times); an empty value means
+  // "all journals". Unknown ids are dropped when the URL is read, so a stale or
+  // hand-written link degrades to "all journals" instead of an empty list.
+  const [sourceFilter, setSourceFilter] = useStateParams(
+    '',
+    'source',
+    (s) => s,
+    (s) => normalizeSourceFilter(s).join(',')
+  );
+
   // Rating filter (0 = any) and sort
   const [minRating, setMinRating] = useStateParams<number>(
     0,
@@ -179,6 +191,8 @@ const WrappedWelcome = (props: UseFencing) => {
     setDayOfWeekFilter,
     search,
     setSearch,
+    sourceFilter,
+    setSourceFilter,
     minRating,
     setMinRating,
     sortBy,

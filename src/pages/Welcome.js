@@ -12,6 +12,9 @@ import {
   MdClose,
   MdStar,
   MdStarBorder,
+  MdPublic,
+  MdFiberNew,
+  MdTrendingUp,
 } from 'react-icons/md';
 import _ from 'lodash';
 
@@ -21,13 +24,38 @@ import Upload from '../components/Upload';
 import PuzzleList from '../components/PuzzleList';
 import {WelcomeVariantsControl} from '../components/WelcomeVariantsControl';
 import {isMobile, colorAverage} from '../lib/jsUtils';
+import {PUZZLE_SOURCES, SOURCE_GROUPS, normalizeSourceFilter} from '../shared/puzzle_source';
 
 const BLUE = '#6aa9f4';
 const WHITE = '#FFFFFF';
 
+const SIZE_NAMES = ['Mini', 'Midi', 'Standard', 'Large'];
+
+const ALL_SIZES = {Mini: true, Midi: true, Standard: true, Large: true};
+const ALL_TYPES = {Standard: true, Cryptic: true, Contest: true};
+const ALL_DAYS = {
+  Mon: true,
+  Tue: true,
+  Wed: true,
+  Thu: true,
+  Fri: true,
+  Sat: true,
+  Sun: true,
+  Unknown: true,
+};
+
 const handleLabelMouseDown = (e) => {
   e.preventDefault();
 };
+
+const isEverythingSelected = (group) => !_.isEmpty(group) && _.every(_.values(group), Boolean);
+
+// The rail can't offer all ~24 publications without becoming a wall of chips,
+// so the mainstream ones sit in the open rail and the long tail lives behind a
+// "More journals" disclosure, sectioned by the group each publication declares
+// in shared/puzzle_source.ts. Ordering comes from the taxonomy itself.
+const PRIMARY_SOURCES = PUZZLE_SOURCES.filter((source) => source.primary);
+const TRAY_SOURCES = PUZZLE_SOURCES.filter((source) => !source.primary);
 
 export default class Welcome extends Component {
   constructor(props) {
@@ -121,6 +149,7 @@ export default class Welcome extends Component {
         statusFilter={this.props.statusFilter}
         typeFilter={this.props.typeFilter}
         dayOfWeekFilter={this.props.dayOfWeekFilter}
+        sourceFilter={this.props.sourceFilter}
         minRating={this.props.minRating}
         sortBy={this.props.sortBy}
         search={this.props.search}
@@ -159,16 +188,7 @@ export default class Welcome extends Component {
 
   handleSelectAll = (header) => {
     if (header === 'Day') {
-      this.props.setDayOfWeekFilter({
-        Mon: true,
-        Tue: true,
-        Wed: true,
-        Thu: true,
-        Fri: true,
-        Sat: true,
-        Sun: true,
-        Unknown: true,
-      });
+      this.props.setDayOfWeekFilter({...ALL_DAYS});
     }
   };
 
@@ -226,10 +246,6 @@ export default class Welcome extends Component {
       e.preventDefault();
       this.closeMobileSidebar();
     }
-  };
-
-  handleSortChange = (e) => {
-    this.props.setSortBy(e.target.value);
   };
 
   handleMinRatingClick = (e) => {
@@ -291,6 +307,57 @@ export default class Welcome extends Component {
       const {header} = e.currentTarget.dataset;
       this.handleSelectNone(header);
     }
+  };
+
+  get selectedSources() {
+    return normalizeSourceFilter(this.props.sourceFilter);
+  }
+
+  get hasActiveFilters() {
+    const {sizeFilter, typeFilter, dayOfWeekFilter, minRating} = this.props;
+    return (
+      this.selectedSources.length > 0 ||
+      !isEverythingSelected(sizeFilter) ||
+      !isEverythingSelected(typeFilter) ||
+      !isEverythingSelected(dayOfWeekFilter) ||
+      (minRating || 0) > 0
+    );
+  }
+
+  // Source chips are a multi-select: clicking a journal adds it to the list,
+  // clicking it again removes it. An empty list means "all journals".
+  handleToggleSource = (e) => {
+    const {sourceId} = e.currentTarget.dataset;
+    const selected = this.selectedSources;
+    const next = selected.includes(sourceId)
+      ? selected.filter((s) => s !== sourceId)
+      : [...selected, sourceId];
+    this.props.setSourceFilter(next.join(','));
+  };
+
+  handleShowAllSources = () => {
+    this.props.setSourceFilter('');
+  };
+
+  handleSizePreset = (e) => {
+    const {sizeName} = e.currentTarget.dataset;
+    this.props.setSizeFilter({Mini: false, Midi: false, Standard: false, Large: false, [sizeName]: true});
+  };
+
+  handleSizeAll = () => {
+    this.props.setSizeFilter({...ALL_SIZES});
+  };
+
+  handleSortChange = (e) => {
+    this.props.setSortBy(e.currentTarget.dataset.sortBy);
+  };
+
+  handleClearFilters = () => {
+    this.props.setSourceFilter('');
+    this.props.setSizeFilter({...ALL_SIZES});
+    this.props.setTypeFilter({...ALL_TYPES});
+    this.props.setDayOfWeekFilter({...ALL_DAYS});
+    this.props.setMinRating(0);
   };
 
   renderFilters() {
@@ -384,23 +451,6 @@ export default class Welcome extends Component {
     };
 
     const minRating = this.props.minRating || 0;
-    const sortBy = this.props.sortBy || 'default';
-
-    const sortGroup = (
-      <div className="flex--column checkbox-group" style={groupStyle}>
-        <span style={{...headerStyle, cursor: 'default'}}>Sort</span>
-        <select
-          className="welcome--sort-select"
-          value={sortBy}
-          onChange={this.handleSortChange}
-          aria-label="Sort puzzles"
-        >
-          <option value="default">Newest</option>
-          <option value="rating_desc">Highest rated</option>
-          <option value="rating_asc">Lowest rated</option>
-        </select>
-      </div>
-    );
 
     const ratingGroup = (
       <div className="flex--column checkbox-group" style={groupStyle}>
@@ -432,12 +482,167 @@ export default class Welcome extends Component {
 
     return (
       <div className="flex--column flex--shrink-0 filters">
-        {sortGroup}
         {ratingGroup}
         {checkboxGroup('Size', sizeFilter)}
         {checkboxGroup('Type', typeFilter)}
         {checkboxGroup('Day', dayOfWeekFilter, true)}
         {checkboxGroup('Status', statusFilter)}
+      </div>
+    );
+  }
+
+  // The hero replaces the old search bar + sidebar-only controls: journals and
+  // size live here because they are the first two decisions a solver makes.
+  //
+  // Any selected journal outside the primary set is promoted into the open
+  // rail, so a shared link like ?source=avcx still shows *why* the list is
+  // narrow instead of hiding the active chip behind a collapsed disclosure.
+  renderSourceRail() {
+    const selected = this.selectedSources;
+    const allActive = selected.length === 0;
+    const promoted = TRAY_SOURCES.filter((source) => selected.includes(source.id));
+    const tray = TRAY_SOURCES.filter((source) => !selected.includes(source.id));
+    const renderChip = (source) => {
+      const active = selected.includes(source.id);
+      return (
+        <button
+          key={source.id}
+          type="button"
+          className={clsx('welcome--chip', {active})}
+          aria-pressed={active}
+          title={source.fullName}
+          data-source-id={source.id}
+          onClick={this.handleToggleSource}
+        >
+          {source.label}
+        </button>
+      );
+    };
+    const renderGroup = (group) => (
+      <div className="welcome--group" key={group.id}>
+        <span className="welcome--group-label">{group.label}</span>
+        <div className="flex welcome--rail welcome--rail--tray">{group.sources.map(renderChip)}</div>
+      </div>
+    );
+    // Section the long tail so ~24 journals read as a few short rows rather
+    // than one undifferentiated block. A group whose members are all promoted
+    // into the open rail (because they are selected) disappears with them.
+    const groupedTray = SOURCE_GROUPS.map((group) => ({
+      id: group.id,
+      label: group.label,
+      sources: tray.filter((source) => source.group === group.id),
+    })).filter((group) => group.sources.length > 0);
+    return (
+      <div className="welcome--rail-wrap">
+        <span className="welcome--control-label">Source</span>
+        <div className="flex welcome--rail" role="group" aria-label="Filter by publication">
+          <button
+            type="button"
+            className={clsx('welcome--chip', 'welcome--chip--all', {active: allActive})}
+            aria-pressed={allActive}
+            onClick={this.handleShowAllSources}
+          >
+            <MdPublic className="welcome--chip-icon" />
+            All journals
+          </button>
+          {PRIMARY_SOURCES.map(renderChip)}
+          {promoted.map(renderChip)}
+        </div>
+        {tray.length > 0 && (
+          <details className="welcome--more">
+            <summary className="welcome--more-toggle">
+              More journals
+              <span className="welcome--more-count">{tray.length}</span>
+            </summary>
+            <div className="welcome--more-body">{groupedTray.map(renderGroup)}</div>
+          </details>
+        )}
+      </div>
+    );
+  }
+
+  renderSizeControl() {
+    const sizeFilter = this.props.sizeFilter || {};
+    const activeCount = SIZE_NAMES.filter((name) => sizeFilter[name]).length;
+    const allSizes = activeCount === SIZE_NAMES.length;
+    return (
+      <div className="welcome--control-row">
+        <span className="welcome--control-label">Size</span>
+        <div className="flex welcome--segmented" role="group" aria-label="Filter by puzzle size">
+          <button
+            type="button"
+            className={clsx('welcome--segmented-option', {active: allSizes})}
+            aria-pressed={allSizes}
+            onClick={this.handleSizeAll}
+          >
+            All sizes
+          </button>
+          {SIZE_NAMES.map((name) => {
+            const active = activeCount === 1 && !!sizeFilter[name];
+            return (
+              <button
+                key={name}
+                type="button"
+                className={clsx('welcome--segmented-option', {active})}
+                aria-pressed={active}
+                data-size-name={name}
+                onClick={this.handleSizePreset}
+              >
+                {name}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  renderViewToggle() {
+    const sortBy = this.props.sortBy || 'default';
+    return (
+      <div className="flex welcome--segmented welcome--segmented--view" role="group" aria-label="Sort order">
+        <button
+          type="button"
+          className={clsx('welcome--segmented-option', {active: sortBy === 'default'})}
+          aria-pressed={sortBy === 'default'}
+          data-sort-by="default"
+          onClick={this.handleSortChange}
+        >
+          <MdFiberNew className="welcome--segmented-icon" />
+          Latest
+        </button>
+        <button
+          type="button"
+          className={clsx('welcome--segmented-option', {active: sortBy === 'rating_desc'})}
+          aria-pressed={sortBy === 'rating_desc'}
+          data-sort-by="rating_desc"
+          onClick={this.handleSortChange}
+        >
+          <MdTrendingUp className="welcome--segmented-icon" />
+          Top rated
+        </button>
+      </div>
+    );
+  }
+
+  renderHero() {
+    return (
+      <div className="welcome--hero">
+        <div className="flex welcome--hero-top">
+          <div className="flex--column welcome--hero-heading">
+            <h1 className="welcome--hero-title">Find your next crossword</h1>
+            <p className="welcome--hero-subtitle">Every journal in one place — pick a source, then a size.</p>
+          </div>
+          {this.renderViewToggle()}
+        </div>
+        {this.renderSourceRail()}
+        {this.renderSizeControl()}
+        {this.hasActiveFilters && (
+          <button type="button" className="welcome--clear-filters" onClick={this.handleClearFilters}>
+            <MdClose className="welcome--clear-filters-icon" />
+            Clear all filters
+          </button>
+        )}
       </div>
     );
   }
@@ -514,7 +719,8 @@ export default class Welcome extends Component {
           <input
             ref={this.searchInput}
             style={this.searchInputStyle}
-            placeholder=" "
+            placeholder="Search puzzles or authors"
+            aria-label="Search puzzles or authors"
             onFocus={this.handleSearchFocus}
             onBlur={this.handleSearchBlur}
             onInput={this.handleSearchInput}
@@ -561,6 +767,12 @@ export default class Welcome extends Component {
           </div>
           <div className="flex--column flex--grow" style={{overflowY: 'auto'}}>
             {this.renderFilters()}
+            {this.hasActiveFilters && (
+              <button type="button" className="welcome--clear-filters" onClick={this.handleClearFilters}>
+                <MdClose className="welcome--clear-filters-icon" />
+                Clear all filters
+              </button>
+            )}
             <WelcomeVariantsControl fencing={this.props.fencing} />
           </div>
           <div className="flex quickplay" style={{width: '100%'}}>
@@ -596,6 +808,7 @@ export default class Welcome extends Component {
           )}
           <div className="flex--column flex--grow welcome--main">
             {this.renderSearch()}
+            {this.renderHero()}
             {this.renderPuzzles()}
           </div>
         </div>

@@ -18,6 +18,18 @@ function parseSortBy(raw: unknown): PuzzleSortBy {
 }
 
 /**
+ * Publication filter. Accepts a single source id, a comma-separated list, or an
+ * array of ids (repeated query params). Unknown ids are dropped downstream by
+ * normalizeSourceFilter, so anything we cannot parse degrades to "all sources"
+ * rather than to an empty result set.
+ */
+function parseSourceFilter(raw: unknown): string {
+  if (Array.isArray(raw)) return raw.map((v) => String(v)).join(',');
+  if (typeof raw === 'string') return raw;
+  return '';
+}
+
+/**
  * @openapi
  * /puzzle_list:
  *   get:
@@ -75,6 +87,7 @@ router.get<{}, ListPuzzleResponse>('/', optionalAuth, async (req, res, next) => 
         Large: rawFilters?.sizeFilter?.Large !== 'false',
       },
       nameOrTitleFilter: (rawFilters?.nameOrTitleFilter as string) || '',
+      sourceFilter: parseSourceFilter(rawFilters?.sourceFilter),
       typeFilter: {
         Standard: rawFilters?.typeFilter?.Standard !== 'false',
         Cryptic: rawFilters?.typeFilter?.Cryptic !== 'false',

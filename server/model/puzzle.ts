@@ -2,8 +2,9 @@ import crypto from 'crypto';
 import _ from 'lodash';
 import Joi from 'joi';
 import {PuzzleJson, ListPuzzleRequestFilters, AddPuzzleResult} from '@shared/types';
+import {normalizeSourceFilter, sourceSqlPattern} from '@shared/puzzle_source';
 import {pool} from './pool';
-import {dayOfWeekExtract} from './sql_helpers';
+import {dayOfWeekExtract, puzzleSourceExtract} from './sql_helpers';
 import {TTLCache} from './ttl_cache';
 
 // ================ Read and Write methods used to interface with postgres ========== //
@@ -144,6 +145,37 @@ const buildTypeFilterClause = (typeFilter: ListPuzzleRequestFilters['typeFilter'
   return `AND (${conditions.join(' OR ')})`;
 };
 
+// Publication ("source") classification, derived from title + copyright text.
+// No alias needed here since queries reference `content` directly.
+const SOURCE_EXTRACT = puzzleSourceExtract('');
+
+/**
+ * Builds the publication filter. `sourceFilter` is a comma-separated list of
+ * source ids from shared/puzzle_source.ts. The catch-all `other` bucket is the
+ * complement of every known publication, i.e. SOURCE_EXTRACT IS NULL.
+ *
+ * Returns an empty clause when nothing (or everything) is selected, matching
+ * how the size/type/day filters treat their all-selected state.
+ */
+const buildSourceFilterClause = (sourceFilter: string | undefined): string => {
+  const selected = normalizeSourceFilter(sourceFilter);
+  if (selected.length === 0) return '';
+
+  const named = selected.filter((id) => sourceSqlPattern(id) !== null);
+  // `other` is the only id without a pattern; selecting it means "no known match".
+  const includeOther = selected.length > named.length;
+
+  if (includeOther && named.length === 0) return `AND ${SOURCE_EXTRACT} IS NULL`;
+
+  const conditions: string[] = [];
+  if (named.length > 0) {
+    conditions.push(`${SOURCE_EXTRACT} IN (${named.map((id) => `'${id}'`).join(', ')})`);
+  }
+  if (includeOther) conditions.push(`${SOURCE_EXTRACT} IS NULL`);
+
+  return `AND (${conditions.join(' OR ')})`;
+};
+
 // Day-of-week extraction from puzzle titles — no alias needed here since queries reference `content` directly
 const DAY_EXTRACT = dayOfWeekExtract('');
 
@@ -200,6 +232,7 @@ export async function listPuzzles(
 
     const sizeClause = buildSizeFilterClause(filter.sizeFilter);
     const typeClause = buildTypeFilterClause(filter.typeFilter);
+    const sourceClause = buildSourceFilterClause(filter.sourceFilter);
     const dayParamOffset = parameterOffset + parametersForTitleAuthorFilter.length;
     const {clause: dayClause, params: dayParams} = buildDayOfWeekFilterClause(
       filter.dayOfWeekFilter,
@@ -248,6 +281,7 @@ export async function listPuzzles(
       WHERE ${visibilityClause}
       ${sizeClause}
       ${typeClause}
+      ${sourceClause}
       ${parameterizedTitleAuthorFilter}
       ${dayClause}
       ${ratingFilterClause}

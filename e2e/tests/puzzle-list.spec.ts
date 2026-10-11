@@ -77,6 +77,59 @@ test.describe('Puzzle list', () => {
     assertNoFatalErrors(consoleErrors);
   });
 
+  test('journal chips filter by publication and round-trip through the URL', async ({smoke}) => {
+    const {page, consoleErrors} = smoke;
+
+    await page.goto('/');
+    await assertPageRendered(page);
+
+    await expect(page.locator('.entry').first()).toBeVisible({timeout: 15_000});
+
+    // "All journals" is the default: no publication restriction.
+    await expect(page.locator('.welcome--chip--all')).toHaveClass(/active/);
+
+    // Selecting a journal asks the API for that publication only...
+    const responsePromise = page.waitForResponse(
+      (r) => r.url().includes('/api/puzzle_list') && r.url().includes('sourceFilter%5D=nyt')
+    );
+    await page.locator('.welcome--chip[data-source-id="nyt"]').click();
+    const response = await responsePromise;
+    expect(response.url()).toContain('filter%5BsourceFilter%5D=nyt');
+
+    // ...and the selection is shareable, so the URL carries it.
+    expect(page.url()).toContain('source=nyt');
+    await expect(page.locator('.welcome--chip[data-source-id="nyt"]')).toHaveClass(/active/);
+    await expect(page.locator('.welcome--chip--all')).not.toHaveClass(/active/);
+
+    // "All journals" clears it again.
+    const cleared = page.waitForResponse(
+      (r) => r.url().includes('/api/puzzle_list') && r.url().includes('sourceFilter%5D=&')
+    );
+    await page.locator('.welcome--chip--all').click();
+    await cleared;
+    expect(page.url()).not.toContain('source=nyt');
+
+    assertNoFatalErrors(consoleErrors);
+  });
+
+  test('latest/top-rated toggle changes the sort sent to the API', async ({smoke}) => {
+    const {page, consoleErrors} = smoke;
+
+    await page.goto('/');
+    await assertPageRendered(page);
+
+    await expect(page.locator('.entry').first()).toBeVisible({timeout: 15_000});
+
+    const responsePromise = page.waitForResponse(
+      (r) => r.url().includes('/api/puzzle_list') && r.url().includes('sortBy%5D=rating_desc')
+    );
+    await page.getByRole('button', {name: 'Top rated'}).click();
+    const response = await responsePromise;
+    expect(response.url()).toContain('filter%5BsortBy%5D=rating_desc');
+
+    assertNoFatalErrors(consoleErrors);
+  });
+
   test('puzzle entry links to a play page', async ({smoke}) => {
     const {page, consoleErrors} = smoke;
 

@@ -181,3 +181,37 @@ describe('Entry display', () => {
     expect(numSolves).toBe(0);
   });
 });
+
+// Walks a returned React element tree looking for nodes with the given className.
+// There is no @testing-library/react in this project, so the rendered tree is
+// inspected directly.
+function findByClass(node: any, className: string, found: any[] = []): any[] {
+  if (Array.isArray(node)) {
+    node.forEach((child) => findByClass(child, className, found));
+    return found;
+  }
+  if (!node || typeof node !== 'object') return found;
+  const classes = node.props?.className;
+  if (typeof classes === 'string' && classes.split(/\s+/).includes(className)) found.push(node);
+  findByClass(node.props?.children, className, found);
+  return found;
+}
+
+describe('Entry publication badge', () => {
+  it('renders the publication label for a known source', () => {
+    const entry = makeEntry({source: 'nyt'});
+    const badges = findByClass(entry.render(), 'entry--source');
+    expect(badges).toHaveLength(1);
+    expect(badges[0].props.children).toBe('NY Times');
+    expect(badges[0].props.title).toBe('The New York Times');
+  });
+
+  it('omits the badge for the catch-all source and for entries with no source', () => {
+    expect(findByClass(makeEntry({source: 'other'}).render(), 'entry--source')).toHaveLength(0);
+    expect(findByClass(makeEntry({}).render(), 'entry--source')).toHaveLength(0);
+  });
+
+  it('omits the badge for an unknown source id', () => {
+    expect(findByClass(makeEntry({source: 'not-a-publication'}).render(), 'entry--source')).toHaveLength(0);
+  });
+});

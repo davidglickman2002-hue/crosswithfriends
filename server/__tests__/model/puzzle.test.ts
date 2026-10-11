@@ -150,6 +150,83 @@ describe('listPuzzles', () => {
     expect(sql).not.toContain('BETWEEN 9 AND 12');
   });
 
+  it('skips the source filter when no publication is selected', async () => {
+    pool.query.mockResolvedValue({rows: []});
+
+    await listPuzzles(defaultFilter, 50, 0);
+
+    const sql = pool.query.mock.calls[0][0] as string;
+    expect(sql).not.toContain('regexp_replace');
+  });
+
+  it('applies the source filter for a known publication', async () => {
+    pool.query.mockResolvedValue({rows: []});
+    const filter = {...defaultFilter, sourceFilter: 'nyt'};
+
+    await listPuzzles(filter, 50, 0);
+
+    const sql = pool.query.mock.calls[0][0] as string;
+    expect(sql).toContain("IN ('nyt')");
+    // The CASE expression must match on title/copyright text, not on a column
+    expect(sql).toContain("content->'info'->>'copyright'");
+    // The text is normalised before matching, so the test is case-sensitive
+    expect(sql).toContain('lower(');
+    expect(sql).toContain('regexp_replace');
+    // ...and the pattern is written in normalised form with space boundaries
+    expect(sql).toContain('ny times');
+    expect(sql).not.toContain('~*');
+  });
+
+  it('treats "other" as the complement of every known publication', async () => {
+    pool.query.mockResolvedValue({rows: []});
+    const filter = {...defaultFilter, sourceFilter: 'other'};
+
+    await listPuzzles(filter, 50, 0);
+
+    const sql = pool.query.mock.calls[0][0] as string;
+    expect(sql).toContain('IS NULL');
+    expect(sql).not.toContain("IN ('");
+  });
+
+  it('combines a named publication with "other" using OR', async () => {
+    pool.query.mockResolvedValue({rows: []});
+    const filter = {...defaultFilter, sourceFilter: 'nyt,other'};
+
+    await listPuzzles(filter, 50, 0);
+
+    const sql = pool.query.mock.calls[0][0] as string;
+    expect(sql).toContain("IN ('nyt')");
+    expect(sql).toContain('IS NULL');
+    expect(sql).toMatch(/IN \('nyt'\) OR[\s\S]*IS NULL/);
+  });
+
+  it('degrades unknown source ids to no filter instead of an empty result set', async () => {
+    pool.query.mockResolvedValue({rows: []});
+    const filter = {...defaultFilter, sourceFilter: 'not-a-publication'};
+
+    await listPuzzles(filter, 50, 0);
+
+    const sql = pool.query.mock.calls[0][0] as string;
+    expect(sql).not.toContain('regexp_replace');
+  });
+
+  it('does not shift positional parameters when the source filter is applied', async () => {
+    pool.query.mockResolvedValue({rows: []});
+    const filter = {...defaultFilter, sourceFilter: 'nyt', nameOrTitleFilter: 'monday'};
+    const userId = 'user-789';
+
+    await listPuzzles(filter, 50, 0, userId);
+
+    const sql = pool.query.mock.calls[0][0] as string;
+    const params = pool.query.mock.calls[0][1] as any[];
+    expect(params[0]).toBe(50);
+    expect(params[1]).toBe(0);
+    const match = sql.match(/uploaded_by = \$(\d+)/);
+    expect(match).not.toBeNull();
+    const userIdParamPos = Number.parseInt(match![1], 10);
+    expect(params[userIdParamPos - 1]).toBe(userId);
+  });
+
   it('userId parameter index accounts for search tokens and day filters', async () => {
     pool.query.mockResolvedValue({rows: []});
     const filter = {...defaultFilter, nameOrTitleFilter: 'test puzzle'};
