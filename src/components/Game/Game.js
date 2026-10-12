@@ -629,6 +629,7 @@ export default class Game extends Component {
         onToggleFocusMode={this.props.onToggleFocusMode}
         restrictions={this.props.restrictions}
         isOwner={!!this.props.isOwner}
+        onQuickChat={this.props.onChat ? this.handleQuickChat : undefined}
       />
     );
   }
@@ -646,12 +647,8 @@ export default class Game extends Component {
           }}
         >
           {this.renderPlayer()}
-          {this.props.onChat && (
-            <QuickChat
-              onSend={this.handleQuickChat}
-              onClose={this.handleRefocus}
-              mobile={!!this.props.mobile}
-            />
+          {this.props.onChat && !this.props.mobile && (
+            <QuickChat onSend={this.handleQuickChat} onClose={this.handleRefocus} mobile={false} />
           )}
         </div>
         {this.game.solved && <Confetti />}

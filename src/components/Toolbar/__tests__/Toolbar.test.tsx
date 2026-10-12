@@ -1,4 +1,4 @@
-﻿/* eslint-disable react/jsx-props-no-spreading */
+/* eslint-disable react/jsx-props-no-spreading */
 import {describe, it, expect, vi, beforeEach, afterEach} from 'vitest';
 import {act} from 'react';
 import {createRoot, Root} from 'react-dom/client';
@@ -136,5 +136,49 @@ describe('Toolbar puzzle title display', () => {
 
     const header = container.querySelector('.toolbar--header--chat-hidden');
     expect(header).not.toBeNull();
+  });
+
+  it('renders quick chat Say button in toolbar--mobile when onQuickChat is provided', async () => {
+    const onQuickChat = vi.fn();
+    await renderToolbar({
+      mobile: true,
+      onQuickChat,
+    });
+
+    const sayButton = container.querySelector('.toolbar--mobile .quick-chat--button') as HTMLButtonElement;
+    expect(sayButton).not.toBeNull();
+    expect(sayButton.textContent).toContain('Say');
+
+    // Click to open quick chat panel
+    await act(async () => {
+      sayButton.click();
+    });
+
+    const input = container.querySelector('.quick-chat--input') as HTMLInputElement;
+    expect(input).not.toBeNull();
+
+    // Type message and submit
+    await act(async () => {
+      const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
+      nativeSetter?.call(input, 'Great clue!');
+      input.dispatchEvent(new Event('input', {bubbles: true}));
+    });
+
+    const form = container.querySelector('.quick-chat--panel') as HTMLFormElement;
+    await act(async () => {
+      form.dispatchEvent(new Event('submit', {bubbles: true, cancelable: true}));
+    });
+
+    expect(onQuickChat).toHaveBeenCalledWith('Great clue!');
+    expect(container.querySelector('.quick-chat--panel')).toBeNull();
+  });
+
+  it('does not render quick chat Say button when onQuickChat is not provided', async () => {
+    await renderToolbar({
+      mobile: true,
+      onQuickChat: undefined,
+    });
+
+    expect(container.querySelector('.toolbar--mobile .quick-chat--button')).toBeNull();
   });
 });

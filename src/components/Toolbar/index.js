@@ -17,6 +17,7 @@ import Clock from './Clock';
 import ConfirmDialog from '../common/ConfirmDialog';
 import ActionMenu from './ActionMenu';
 import Popup from './Popup';
+import QuickChat from '../Game/QuickChat';
 import {isMobile} from '../../lib/jsUtils';
 
 const pencilColorKey = 'pencil-color';
@@ -345,6 +346,11 @@ export default class Toolbar extends Component {
         <FaList className="toolbar--icon-list" />
       </div>
     );
+  }
+
+  renderQuickChat() {
+    if (!this.props.onQuickChat) return null;
+    return <QuickChat onSend={this.props.onQuickChat} onClose={this.props.onRefocus} mobile />;
   }
 
   renderChatButton() {
@@ -698,6 +704,7 @@ export default class Toolbar extends Component {
                   {!solved && !replayMode && contest && this.renderMarkSolvedButton()}
                   {solved && !replayMode && this.renderReplayLink()}
                   {solved && !replayMode && this.renderSaveReplay()}
+                  {!replayMode && this.renderQuickChat()}
                 </>
               ) : (
                 <>

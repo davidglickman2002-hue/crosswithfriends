@@ -10,13 +10,17 @@
   font-family: inherit;
 }
 
-/* On mobile the on-screen keyboard owns the bottom of the play area, so the
-   button sits at the top instead and the composer opens below it. */
+/* On mobile the Say button lives inside the top toolbar so it never obscures
+   crossword grid cells, clues, or keyboard keys. The composer drops down below it. */
 .quick-chat--mobile {
-  top: 8px;
-  right: 8px;
+  position: relative;
+  top: auto;
+  right: auto;
   bottom: auto;
-  flex-direction: column-reverse;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  z-index: 40;
 }
 
 .quick-chat--button {
@@ -94,13 +98,93 @@
 }
 
 .quick-chat--mobile .quick-chat--panel {
-  width: min(260px, 78vw);
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 1000;
+  width: min(280px, calc(100vw - 24px));
+  animation: quick-chat-in-mobile 0.16s ease-out;
+}
+
+.toolbar--mobile .quick-chat {
+  position: relative;
+  top: auto;
+  right: auto;
+  bottom: auto;
+  flex-shrink: 0;
+}
+
+.toolbar--mobile .quick-chat--button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  height: 28px;
+  border: none;
+  border-radius: 999px;
+  background-color: var(--main-blue);
+  color: #fff;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 20%);
+  transition:
+    background-color 0.15s,
+    transform 0.15s;
+}
+
+.toolbar--mobile .quick-chat--button:hover {
+  background-color: #4c92dd;
+}
+
+.toolbar--mobile .quick-chat--button:active {
+  transform: scale(0.96);
+}
+
+.toolbar--mobile .quick-chat--button.active {
+  background-color: var(--main-blue-3, #2f6fb5);
+}
+
+.toolbar--mobile .quick-chat--button-icon {
+  font-size: 13px;
+}
+
+@media (width <= 360px) {
+  .toolbar--mobile .quick-chat--button {
+    padding: 4px 8px;
+    font-size: 11px;
+    gap: 3px;
+  }
+}
+
+@media (width <= 330px) {
+  .toolbar--mobile .quick-chat--button-label {
+    display: none;
+  }
+
+  .toolbar--mobile .quick-chat--button {
+    padding: 6px;
+    border-radius: 50%;
+  }
 }
 
 @keyframes quick-chat-in {
   from {
     opacity: 0;
     transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes quick-chat-in-mobile {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
   }
 
   to {

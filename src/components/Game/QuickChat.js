@@ -15,6 +15,7 @@ export default function QuickChat({onSend, onClose, mobile}) {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState('');
   const inputRef = useRef(null);
+  const containerRef = useRef(null);
 
   useEffect(() => {
     if (open && inputRef.current) {
@@ -27,6 +28,21 @@ export default function QuickChat({onSend, onClose, mobile}) {
     setMessage('');
     if (onClose) onClose();
   }, [onClose]);
+
+  useEffect(() => {
+    if (!open) {
+      return undefined;
+    }
+    const handlePointerDown = (event) => {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        close();
+      }
+    };
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+    };
+  }, [open, close]);
 
   const handleToggle = useCallback(() => {
     if (open) {
@@ -62,7 +78,7 @@ export default function QuickChat({onSend, onClose, mobile}) {
   );
 
   return (
-    <div className={clsx('quick-chat', {'quick-chat--mobile': mobile})}>
+    <div ref={containerRef} className={clsx('quick-chat', {'quick-chat--mobile': mobile})}>
       {open && (
         <form className="quick-chat--panel" onSubmit={handleSubmit}>
           <div className="quick-chat--hint">Pops up above your selected square</div>
