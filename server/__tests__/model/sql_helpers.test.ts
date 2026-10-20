@@ -1,4 +1,4 @@
-import {dayOfWeekExtract, puzzleSourceExtract} from '../../model/sql_helpers';
+import {dayOfWeekExtract, puzzleDateExtract, puzzleSourceExtract} from '../../model/sql_helpers';
 import {
   classifyPuzzleSource,
   normalizeSourceText,
@@ -37,6 +37,31 @@ describe('dayOfWeekExtract', () => {
 
   it('includes ELSE NULL fallback', () => {
     const sql = dayOfWeekExtract('p');
+    expect(sql).toContain('ELSE NULL');
+  });
+});
+
+describe('puzzleDateExtract', () => {
+  it('returns SQL with table alias prefix when alias is provided', () => {
+    const sql = puzzleDateExtract('p');
+    expect(sql).toContain("p.content->'info'->>'title'");
+    expect(sql).toContain("p.content->'info'->>'titleOverride'");
+  });
+
+  it('returns SQL without table alias prefix when alias is empty', () => {
+    const sql = puzzleDateExtract('');
+    expect(sql).toContain("content->'info'->>'title'");
+    expect(sql).not.toContain(".content->'info'->>'title'");
+  });
+
+  it('handles Month Day, Year format', () => {
+    const sql = puzzleDateExtract();
+    expect(sql).toContain('oct|october');
+    expect(sql).toContain('THEN 1000');
+  });
+
+  it('includes ELSE NULL fallback for non-dated titles', () => {
+    const sql = puzzleDateExtract();
     expect(sql).toContain('ELSE NULL');
   });
 });

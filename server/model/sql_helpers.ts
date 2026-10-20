@@ -26,6 +26,71 @@ export function dayOfWeekExtract(tableAlias = ''): string {
   END`;
 }
 
+/**
+ * Returns a SQL CASE expression that extracts an integer publication date (YYYYMMDD)
+ * from a puzzle title or titleOverride. Returns NULL if no publication date is present.
+ *
+ * @param tableAlias - Table alias for the puzzles table (e.g. 'p'). Pass empty string for no alias.
+ */
+export function puzzleDateExtract(tableAlias = ''): string {
+  const prefix = tableAlias ? `${tableAlias}.` : '';
+  const titleText = `lower(COALESCE(${prefix}content->'info'->>'titleOverride', '') || ' ' || COALESCE(${prefix}content->'info'->>'title', ''))`;
+
+  return `
+  CASE
+    -- Format 1: Month Name Day, Year (e.g. 'October 19, 2026' or 'Oct. 19, 2026')
+    WHEN ${titleText} ~ '\\m(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)[.]?\\s+[0-9]{1,2}(?:st|nd|rd|th)?,?\\s+[0-9]{4}\\M'
+    THEN (
+      substring(${titleText} from '\\m(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)[.]?\\s+[0-9]{1,2}(?:st|nd|rd|th)?,?\\s+([0-9]{4})\\M')::int * 10000
+      + CASE
+          WHEN ${titleText} ~ '\\m(?:jan|january)\\M' THEN 100
+          WHEN ${titleText} ~ '\\m(?:feb|february)\\M' THEN 200
+          WHEN ${titleText} ~ '\\m(?:mar|march)\\M' THEN 300
+          WHEN ${titleText} ~ '\\m(?:apr|april)\\M' THEN 400
+          WHEN ${titleText} ~ '\\m(?:may)\\M' THEN 500
+          WHEN ${titleText} ~ '\\m(?:jun|june)\\M' THEN 600
+          WHEN ${titleText} ~ '\\m(?:jul|july)\\M' THEN 700
+          WHEN ${titleText} ~ '\\m(?:aug|august)\\M' THEN 800
+          WHEN ${titleText} ~ '\\m(?:sep|sept|september)\\M' THEN 900
+          WHEN ${titleText} ~ '\\m(?:oct|october)\\M' THEN 1000
+          WHEN ${titleText} ~ '\\m(?:nov|november)\\M' THEN 1100
+          WHEN ${titleText} ~ '\\m(?:dec|december)\\M' THEN 1200
+          ELSE 0
+        END
+      + substring(${titleText} from '\\m(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)[.]?\\s+([0-9]{1,2})(?:st|nd|rd|th)?,?\\s+[0-9]{4}\\M')::int
+    )
+    -- Format 2: Day Month Name Year (e.g. '19 October 2026' or '19 Oct 2026')
+    WHEN ${titleText} ~ '\\m[0-9]{1,2}(?:st|nd|rd|th)?\\s+(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)[.]?,?\\s+[0-9]{4}\\M'
+    THEN (
+      substring(${titleText} from '\\m[0-9]{1,2}(?:st|nd|rd|th)?\\s+(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)[.]?,?\\s+([0-9]{4})\\M')::int * 10000
+      + CASE
+          WHEN ${titleText} ~ '\\m(?:jan|january)\\M' THEN 100
+          WHEN ${titleText} ~ '\\m(?:feb|february)\\M' THEN 200
+          WHEN ${titleText} ~ '\\m(?:mar|march)\\M' THEN 300
+          WHEN ${titleText} ~ '\\m(?:apr|april)\\M' THEN 400
+          WHEN ${titleText} ~ '\\m(?:may)\\M' THEN 500
+          WHEN ${titleText} ~ '\\m(?:jun|june)\\M' THEN 600
+          WHEN ${titleText} ~ '\\m(?:jul|july)\\M' THEN 700
+          WHEN ${titleText} ~ '\\m(?:aug|august)\\M' THEN 800
+          WHEN ${titleText} ~ '\\m(?:sep|sept|september)\\M' THEN 900
+          WHEN ${titleText} ~ '\\m(?:oct|october)\\M' THEN 1000
+          WHEN ${titleText} ~ '\\m(?:nov|november)\\M' THEN 1100
+          WHEN ${titleText} ~ '\\m(?:dec|december)\\M' THEN 1200
+          ELSE 0
+        END
+      + substring(${titleText} from '\\m([0-9]{1,2})(?:st|nd|rd|th)?\\s+(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)[.]?,?\\s+[0-9]{4}\\M')::int
+    )
+    -- Format 3: ISO Date YYYY-MM-DD
+    WHEN ${titleText} ~ '\\m[0-9]{4}-[0-9]{2}-[0-9]{2}\\M'
+    THEN (
+      substring(${titleText} from '\\m([0-9]{4})-[0-9]{2}-[0-9]{2}\\M')::int * 10000
+      + substring(${titleText} from '\\m[0-9]{4}-([0-9]{2})-[0-9]{2}\\M')::int * 100
+      + substring(${titleText} from '\\m[0-9]{4}-[0-9]{2}-([0-9]{2})\\M')::int
+    )
+    ELSE NULL
+  END`;
+}
+
 /** Doubles single quotes so a pattern can be embedded in a SQL string literal. */
 function escapeSqlLiteral(value: string): string {
   return value.replace(/'/g, "''");

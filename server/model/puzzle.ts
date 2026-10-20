@@ -4,7 +4,7 @@ import Joi from 'joi';
 import {PuzzleJson, ListPuzzleRequestFilters, AddPuzzleResult} from '@shared/types';
 import {normalizeSourceFilter, sourceSqlPattern} from '@shared/puzzle_source';
 import {pool} from './pool';
-import {dayOfWeekExtract, puzzleSourceExtract} from './sql_helpers';
+import {dayOfWeekExtract, puzzleDateExtract, puzzleSourceExtract} from './sql_helpers';
 import {TTLCache} from './ttl_cache';
 
 // ================ Read and Write methods used to interface with postgres ========== //
@@ -178,6 +178,7 @@ const buildSourceFilterClause = (sourceFilter: string | undefined): string => {
 
 // Day-of-week extraction from puzzle titles — no alias needed here since queries reference `content` directly
 const DAY_EXTRACT = dayOfWeekExtract('');
+const DATE_EXTRACT = puzzleDateExtract('');
 
 const buildDayOfWeekFilterClause = (
   dayFilter: ListPuzzleRequestFilters['dayOfWeekFilter'],
@@ -254,11 +255,11 @@ export async function listPuzzles(
 
     let orderByClause: string;
     if (filter.sortBy === 'rating_desc') {
-      orderByClause = `ORDER BY rating_weighted DESC NULLS LAST, pid_numeric DESC`;
+      orderByClause = `ORDER BY rating_weighted DESC NULLS LAST, (${DATE_EXTRACT}) DESC NULLS LAST, pid_numeric DESC`;
     } else if (filter.sortBy === 'rating_asc') {
-      orderByClause = `ORDER BY rating_weighted ASC NULLS LAST, pid_numeric DESC`;
+      orderByClause = `ORDER BY rating_weighted ASC NULLS LAST, (${DATE_EXTRACT}) DESC NULLS LAST, pid_numeric DESC`;
     } else {
-      orderByClause = `ORDER BY pid_numeric DESC`;
+      orderByClause = `ORDER BY (${DATE_EXTRACT}) DESC NULLS LAST, pid_numeric DESC`;
     }
 
     // Rating and solve-time aggregates are denormalized onto puzzles

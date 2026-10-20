@@ -10,6 +10,7 @@ import AuthContext from '../../lib/AuthContext';
 import './css/puzzleList.css';
 import Entry, {EntryProps} from './Entry';
 import {classifyPuzzleSource, normalizeSourceFilter} from '../../shared/puzzle_source';
+import {comparePuzzleDates, extractPuzzleDate} from '../../shared/puzzle_date';
 
 interface PuzzleStatuses {
   [pid: string]: 'solved' | 'started';
@@ -233,8 +234,10 @@ const NewPuzzleList: React.FC<NewPuzzleListProps> = (props) => {
   }, [handleScroll]);
 
   const selectedSources = normalizeSourceFilter(props.filter?.sourceFilter);
-  const puzzleData: {
+  const isDefaultSort = !props.filter?.sortBy || props.filter.sortBy === 'default';
+  const mappedPuzzles: {
     entryProps: EntryProps;
+    date: number | null;
   }[] = puzzles
     .map((puzzle) => ({
       entryProps: {
@@ -257,6 +260,7 @@ const NewPuzzleList: React.FC<NewPuzzleListProps> = (props) => {
         // localStorage flag left over from a previous logged-in session.
         zenMode: !!user && preferences?.zenMode,
       },
+      date: extractPuzzleDate(puzzle.content.info),
     }))
     .filter((data) => {
       const mappedStatus = {
@@ -272,6 +276,12 @@ const NewPuzzleList: React.FC<NewPuzzleListProps> = (props) => {
     .filter(
       (data) => selectedSources.length === 0 || selectedSources.includes(data.entryProps.source as string)
     );
+
+  const puzzleData = isDefaultSort
+    ? [...mappedPuzzles].sort((a, b) =>
+        comparePuzzleDates({date: a.date, pid: a.entryProps.pid}, {date: b.date, pid: b.entryProps.pid})
+      )
+    : mappedPuzzles;
 
   // Pull further pages while the filtered list would otherwise look empty.
   useEffect(() => {

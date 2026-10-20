@@ -243,11 +243,11 @@ describe('listPuzzles', () => {
     expect(params[userIdParamPos - 1]).toBe(userId);
   });
 
-  it('orders by pid_numeric DESC by default', async () => {
+  it('orders by publication date DESC and pid_numeric DESC by default', async () => {
     pool.query.mockResolvedValue({rows: []});
     await listPuzzles(defaultFilter, 50, 0);
     const sql = pool.query.mock.calls[0][0] as string;
-    expect(sql).toContain('ORDER BY pid_numeric DESC');
+    expect(sql).toContain('DESC NULLS LAST, pid_numeric DESC');
     expect(sql).not.toContain('rating_weighted');
   });
 
@@ -255,14 +255,16 @@ describe('listPuzzles', () => {
     pool.query.mockResolvedValue({rows: []});
     await listPuzzles({...defaultFilter, sortBy: 'rating_desc'}, 50, 0);
     const sql = pool.query.mock.calls[0][0] as string;
-    expect(sql).toContain('ORDER BY rating_weighted DESC NULLS LAST, pid_numeric DESC');
+    expect(sql).toContain('ORDER BY rating_weighted DESC NULLS LAST');
+    expect(sql).toContain('pid_numeric DESC');
   });
 
   it('orders by weighted rating ASC when sortBy is rating_asc', async () => {
     pool.query.mockResolvedValue({rows: []});
     await listPuzzles({...defaultFilter, sortBy: 'rating_asc'}, 50, 0);
     const sql = pool.query.mock.calls[0][0] as string;
-    expect(sql).toContain('ORDER BY rating_weighted ASC NULLS LAST, pid_numeric DESC');
+    expect(sql).toContain('ORDER BY rating_weighted ASC NULLS LAST');
+    expect(sql).toContain('pid_numeric DESC');
   });
 
   it('skips the rating filter clause when minRating is not set', async () => {
